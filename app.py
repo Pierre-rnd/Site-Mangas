@@ -11,18 +11,21 @@ def get_db_connection():
         user=os.getenv('DB_USER', 'mangas_0ps5_user'),
         password=os.getenv('DB_PASSWORD', 'jV4ofeNqdzvQX1HroOxjaevprGyO5y77')
     )
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
-    return cursor
+    return conn
 
 app = Flask(__name__)
 
 
 def charger_mangas():
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('SELECT * FROM mangas')
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute("SELECT * FROM mangas")
     mangas = cur.fetchall()
+
+    cur.close()
     conn.close()
+
     return mangas
 
 def sauvegarder_mangas(mangas):
