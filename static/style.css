@@ -78,7 +78,6 @@ button:hover {
   cursor: pointer;
   font-family: cursive;
   transition: color 1s;
-  overflow: hidden;
 }
 
 .manga-card img {
