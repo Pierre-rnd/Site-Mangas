@@ -81,9 +81,8 @@ button:hover {
 }
 
 .manga-card img {
-  max-width: 500px; 
-  height: auto; 
-  max-height: 500px; 
+  width: 400px; 
+  height: 500px; 
   object-fit: cover; 
   margin-right: 20px;
 }
