@@ -33,7 +33,7 @@
 <body>
     <h1>Modifier un Manga</h1>
 
-    <form action="/modifier/{{ index }}" method="post">
+    <form action="{{ url_for('modifier', id=manga.id) }}" method="post">
         <label for="nom">Nom du Manga:</label>
         <input type="text" id="nom" name="nom" value="{{ manga.nom }}" required><br>
         
