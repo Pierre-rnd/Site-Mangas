@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for , jsonify
 import os
 import json
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -10,7 +11,8 @@ def get_db_connection():
         user=os.getenv('DB_USER', 'mangas_0ps5_user'),
         password=os.getenv('DB_PASSWORD', 'jV4ofeNqdzvQX1HroOxjaevprGyO5y77')
     )
-    return conn
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    return cursor
 
 app = Flask(__name__)
 
