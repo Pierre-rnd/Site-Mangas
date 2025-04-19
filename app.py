@@ -1,7 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for , jsonify
+import os
 import json
 
+
+
 app = Flask(__name__)
+
 
 def charger_mangas():
     with open('mangas.json', 'r', encoding='utf-8') as f:
@@ -111,6 +115,7 @@ def supprimer(index):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000)) 
+    app.run(host='0.0.0.0', port=port)
 
 
