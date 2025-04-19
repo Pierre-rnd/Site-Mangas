@@ -57,7 +57,7 @@ button:hover {
     display: flex;
     flex-wrap: wrap;
     gap: 40px;
-    justify-content: center;
+    justify-content: space-between;
   align-items: center;
   text-align: center;
 }
@@ -82,16 +82,18 @@ button:hover {
 }
 
 .manga-card img {
-    object-fit: cover;
-    width: 100%;
-    height: auto;
+  max-width: 150px; 
+  height: auto; 
+  max-height: 150px; 
+  object-fit: cover; 
+  margin-right: 20px;
 }
 .manga-card:hover {
     color: rgb(88 199 250 / 100%);
     transition: color 1s;
   }
 
-  @media (max-width: 768px) {
+@media (max-width: 768px) {
     :root {
         --card-height: 50vh; 
         --card-width: calc(var(--card-height) / 1.5);
