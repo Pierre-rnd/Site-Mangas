@@ -102,25 +102,18 @@ def modifier(id):
 
 
 
-@app.route('/editer/<int:index>', methods=['GET', 'POST'])
-def editer(index):
-    mangas = charger_mangas()
-    if request.method == 'POST':
-        mangas[index] = {
-            'nom': request.form['nom'],
-            'chapitre': request.form['chapitre'],
-            'saison': request.form['saison'],
-            'fini': request.form['fini'],
-            'lien': request.form['lien'],
-            'note': int(request.form['note']),
-            'image': request.form['image']
-        }
-        with open('mangas.json', 'w') as f:
-            json.dump(mangas, f)
-        return redirect(url_for('index'))
-    else:
-        manga = mangas[index]
-        return render_template('editer.html', manga=manga, index=index)
+@app.route('/editer/<int:id>', methods=['GET'])
+def editer(id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute('SELECT * FROM mangas WHERE id = %s', (id,))
+    manga = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return render_template('editer.html', manga=manga)
 
 
 
