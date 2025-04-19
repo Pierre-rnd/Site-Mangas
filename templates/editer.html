@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifier un Manga</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Inclure FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .stars {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            cursor: pointer;
+        }
+
+        .stars input[type="radio"] {
+            display: none;
+        }
+
+        .stars label {
+            font-size: 1.5em;
+            color: #ccc;
+        }
+
+        .stars input[type="radio"]:checked ~ label,
+        .stars label:hover,
+        .stars label:hover ~ label {
+            color: #f5b301;
+        }
+    </style>
+</head>
+<body>
+    <h1>Modifier un Manga</h1>
+
+    <form action="/modifier/{{ index }}" method="post">
+        <label for="nom">Nom du Manga:</label>
+        <input type="text" id="nom" name="nom" value="{{ manga.nom }}" required><br>
+        
+        <label for="chapitre">Chapitre actuel:</label>
+        <input type="text" id="chapitre" name="chapitre" value="{{ manga.chapitre }}" required><br>
+        
+        <label for="saison">Saison actuelle:</label>
+        <input type="text" id="saison" name="saison" value="{{ manga.saison }}" required><br>
+        
+        <label for="fini">Est-ce que le manga est fini?</label>
+        <select id="fini" name="fini">
+            <option value="oui" {% if manga.fini == "oui" %}selected{% endif %}>Oui</option>
+            <option value="non" {% if manga.fini == "non" %}selected{% endif %}>Non</option>
+        </select><br>
+
+        
+        <label for="lien">Lien vers la page pour lire le manga:</label>
+        <input type="url" id="lien" name="lien" value="{{ manga.lien }}" required><br>
+        
+        <label for="note">Note:</label>
+        <div class="stars">
+            <input type="radio" id="star5" name="note" value="5" {% if manga.note == 5 %}checked{% endif %} />
+            <label for="star5"><i class="fas fa-star"></i></label>
+            <input type="radio" id="star4" name="note" value="4" {% if manga.note == 4 %}checked{% endif %} />
+            <label for="star4"><i class="fas fa-star"></i></label>
+            <input type="radio" id="star3" name="note" value="3" {% if manga.note == 3 %}checked{% endif %} />
+            <label for="star3"><i class="fas fa-star"></i></label>
+            <input type="radio" id="star2" name="note" value="2" {% if manga.note == 2 %}checked{% endif %} />
+            <label for="star2"><i class="fas fa-star"></i></label>
+            <input type="radio" id="star1" name="note" value="1" {% if manga.note == 1 %}checked{% endif %} />
+            <label for="star1"><i class="fas fa-star"></i></label>
+        </div><br>
+        
+        <label for="image">Lien de l'image:</label>
+        <input type="url" id="image" name="image" value="{{ manga.image }}" required><br>
+
+        <button type="submit">Modifier Manga</button>
+    </form>
+</body>
+</html>
+

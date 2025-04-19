@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestionnaire de Mangas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script>
+        function toggleForm() {
+            var form = document.getElementById('mangaForm');
+            if (form.style.display === 'none' || form.style.display === '') {
+                form.style.display = 'block';
+            } else {
+                form.style.display = 'none';
+                form.reset();  // Réinitialise le formulaire
+            }
+        }
+    </script>
+    <script>
+    function supprimerManga(index) {
+        if (confirm("Êtes-vous sûr de vouloir supprimer ce manga ?")) {
+            fetch(`/supprimer/${index}`, {
+                method: 'POST', // Méthode POST pour appeler le serveur
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Si la suppression est réussie, recharger la page
+                    window.location.reload();
+                } else {
+                    console.error('Erreur lors de la suppression du manga.');
+                    alert('Erreur : impossible de supprimer le manga.');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur lors de la requête :', error);
+                alert('Erreur : impossible de contacter le serveur.');
+            });
+        }
+    }</script>
+    <script>
+        function modifierChapitre(index, change) {
+            fetch(`/modifier_chapitre/${index}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ change: change })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById(`chapitre-${index}`).textContent = data.nouveauChapitre;
+            })
+            .catch(error => console.error('Erreur:', error));
+        }
+    </script>
+    <style>
+        .stars {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            cursor: pointer;
+        }
+
+        .stars input[type="radio"] {
+            display: none;
+        }
+
+        .stars label {
+            font-size: 1.5em;
+            color: #ccc;
+        }
+
+        .stars input[type="radio"]:checked ~ label,
+        .stars label:hover,
+        .stars label:hover ~ label {
+            color: #f5b301;
+        }
+    </style>
+</head>
+<h1>Gestionnaire de Mangas</h1>
+<body>
+    <form method="GET" action="/">
+        <label for="search">Rechercher:</label>
+        <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}">
+        
+        <label for="filter-fini">Fini:</label>
+        <select id="filter-fini" name="filter_fini">
+            <option value="">Tous</option>
+            <option value="oui" {% if request.args.get('filter_fini') == 'oui' %}selected{% endif %}>Oui</option>
+            <option value="non" {% if request.args.get('filter_fini') == 'non' %}selected{% endif %}>Non</option>
+        </select>
+        
+        <label for="filter-note">Note:</label>
+        <select id="filter-note" name="filter_note">
+            <option value="">Toutes</option>
+            {% for i in range(1, 6) %}
+            <option value="{{ i }}" {% if request.args.get('filter_note') == i|string %}selected{% endif %}>{{ i }} étoiles</option>
+
+            {% endfor %}
+        </select>
+        
+        <button type="submit">Filtrer</button>
+        <button type="reset">Réinitialiser</a>
+    </form>
+    
+    
+    <button onclick="toggleForm()">Ajouter un Manga</button>
+    
+    <form id="mangaForm" action="/ajouter" method="post" style="display:none;">
+        <label for="nom">Nom du Manga:</label>
+        <input type="text" id="nom" name="nom" required><br>
+        
+        <label for="chapitre">Chapitre actuel:</label>
+        <input type="text" id="chapitre" name="chapitre" required><br>
+        
+        <label for="saison">Saison actuelle:</label>
+        <input type="text" id="saison" name="saison" required><br>
+        
+        <label for="fini">Est-ce que le manga est fini?</label>
+        <select id="fini" name="fini">
+            <option value="oui">Oui</option>
+            <option value="non">Non</option>
+        </select><br>
+        
+        <label for="lien">Lien vers la page pour lire le manga:</label>
+        <input type="url" id="lien" name="lien" required><br>
+        
+        <label for="note">Note:</label>
+        <div class="stars">
+            <input type="radio" id="star5" name="note" value="5" />
+            <label for="star5"><i class="fas fa-star"></i></label>
+            <input type="radio" id="star4" name="note" value="4" />
+            <label for="star4"><i class="fas fa-star"></i></label>
+            <input type="radio" id="star3" name="note" value="3" />
+            <label for="star3"><i class="fas fa-star"></i></label>
+            <input type="radio" id="star2" name="note" value="2" />
+            <label for="star2"><i class="fas fa-star"></i></label>
+            <input type="radio" id="star1" name="note" value="1" />
+            <label for="star1"><i class="fas fa-star"></i></label>
+        </div><br>
+        <label for="image">Lien de l'image:</label>
+        <input type="url" id="image" name="image" required><br>
+        <button type="submit">Ajouter Manga</button>
+    </form>
+    
+    <div class="manga-cards">
+        {% for manga in mangas %}
+        <div class="manga-card">
+            <img src="{{ manga.image }}" alt="{{ manga.nom }}">
+            <div class="manga-details">
+                <h3>{{ manga.nom }}</h3>
+                <p>
+                    Chapitre:
+                    <ul><button class="chapter-btn" onclick="modifierChapitre('{{ loop.index0 }}', -1)">-</button>
+                    <span id="chapitre-{{ loop.index0 }}">{{ manga.chapitre }}</span>
+                    <button class="chapter-btn" onclick="modifierChapitre('{{ loop.index0 }}', 1)">+</button>
+                </p>
+                <p>Saison: {{ manga.saison }}</p>
+                <p>Fini: {{ 'Oui' if manga.fini == 'oui' else 'Non' }}</p>
+                <p><a href="{{ manga.lien }}" target="_blank">Lire le Manga</a></p>
+                <p>Note: {% for i in range(1, 6) %}
+                    {% if i <= manga.note %}
+                        &#9733;
+                    {% else %}
+                        &#9734;
+                    {% endif %}
+                {% endfor %}</p>
+                <p><a href="{{ url_for('editer', index=loop.index0) }}">Éditer</a></p>
+                <button class="delete-btn" onclick="supprimerManga('{{ loop.index0 }}')">Supprimer</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+</body>
+</html>
