@@ -168,7 +168,7 @@
                         &#9734;
                     {% endif %}
                 {% endfor %}</p>
-                <p><a href="{{ url_for('editer', index=loop.index0) }}">Éditer</a></p>
+                <p><a href="{{ url_for('editer', id=manga.id) }}">Modifier</a> </p>
                 <button class="delete-btn" onclick="supprimerManga('{{ loop.index0 }}')">Supprimer</button>
             </div>
         </div>
