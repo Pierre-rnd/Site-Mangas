@@ -78,10 +78,11 @@ button:hover {
   cursor: pointer;
   font-family: cursive;
   transition: color 1s;
+  overflow: hidden;
 }
 
 .manga-card img {
-    margin-right: 50px;
+    object-fit: cover;
     width: 100%;
     height: auto;
 }
@@ -89,6 +90,35 @@ button:hover {
     color: rgb(88 199 250 / 100%);
     transition: color 1s;
   }
+
+  @media (max-width: 768px) {
+    :root {
+        --card-height: 50vh; 
+        --card-width: calc(var(--card-height) / 1.5);
+    }
+
+    .manga-card {
+        width: 100%; 
+        height: auto; 
+        margin-bottom: 20px; 
+    }
+
+    .manga-cards {
+        gap: 20px;
+    }
+
+    .stars label {
+        font-size: 1.5em;
+    }
+
+    .manga-details h3 {
+        font-size: 1.2em; 
+    }
+
+    .manga-details p {
+        font-size: 1em;
+    }
+}
 
 .manga-card::before {
     content: "";
