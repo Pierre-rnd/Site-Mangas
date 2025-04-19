@@ -63,26 +63,29 @@ button:hover {
 }
 
 .manga-card {
-    background: #191c29;
-  width: var(--card-width);
-  height: var(--card-height);
-  padding: 3px;
   position: relative;
-  border-radius: 6px;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
   display: flex;
   font-size: 2em;
-  color: rgb(88 199 250 / 0%);
-  cursor: pointer;
   font-family: cursive;
   transition: color 1s;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%; 
+  max-width: 300px; 
+  margin: 10px;
+  padding: 10px;
+  box-sizing: border-box; 
+  border: 1px solid  rgb(88 199 250 / 0%); 
+  background-color:  #191c29; 
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .manga-card img {
-  width: 400px; 
-  height: 500px; 
+  width: 300px; 
+  height: 400px; 
   object-fit: cover; 
   margin-right: 20px;
 }
@@ -172,6 +175,14 @@ button:hover {
     font-weight: bold;
     margin-top: 2rem;
   }
+
+  .manga-card .description {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    white-space: nowrap;
+    word-wrap: break-word;
+}
 .manga-details {
     padding: 15px;
     text-align: center;
