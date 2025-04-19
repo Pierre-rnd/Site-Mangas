@@ -17,10 +17,10 @@
         }
     </script>
     <script>
-    function supprimer(index) {
+    function supprimerManga(index) {
         if (confirm("Êtes-vous sûr de vouloir supprimer ce manga ?")) {
             fetch(`/supprimer/${index}`, {
-                method: 'POST',
+                method: 'POST', 
                 headers: {
                     'Content-Type': 'application/json',
                 }
@@ -169,7 +169,7 @@
                     {% endif %}
                 {% endfor %}</p>
                 <p><a href="{{ url_for('editer', index=loop.index0) }}">Éditer</a></p>
-                <button class="delete-btn" onclick="supprimer('{{ loop.index0 }}')">Supprimer</button>
+                <button class="delete-btn" onclick="supprimerManga('{{ loop.index0 }}')">Supprimer</button>
             </div>
         </div>
         {% endfor %}
