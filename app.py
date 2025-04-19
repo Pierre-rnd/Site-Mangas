@@ -1,15 +1,27 @@
 from flask import Flask, render_template, request, redirect, url_for , jsonify
 import os
 import json
+import psycopg2
 
-
+def get_db_connection():
+    conn = psycopg2.connect(
+        host=os.getenv('DB_HOST', 'dpg-d020pojuibrs73b8savg-a'),  
+        database=os.getenv('DB_NAME', 'mangas_0ps5'),
+        user=os.getenv('DB_USER', 'mangas_0ps5_user'),
+        password=os.getenv('DB_PASSWORD', 'jV4ofeNqdzvQX1HroOxjaevprGyO5y77')
+    )
+    return conn
 
 app = Flask(__name__)
 
 
 def charger_mangas():
-    with open('mangas.json', 'r', encoding='utf-8') as f:
-        return json.load(f)
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM mangas')
+    mangas = cur.fetchall()
+    conn.close()
+    return mangas
 
 def sauvegarder_mangas(mangas):
     with open('mangas.json', 'w', encoding='utf-8') as f:
@@ -37,34 +49,51 @@ def index():
 
 @app.route('/ajouter', methods=['POST'])
 def ajouter():
-    mangas = charger_mangas()
-    nouveau_manga = {
-        'nom': request.form['nom'],
-        'chapitre': request.form['chapitre'],
-        'saison': request.form['saison'],
-        'fini': request.form['fini'],
-        'lien': request.form['lien'],
-        'note': int(request.form['note']),
-        'image': request.form['image']
-    }
-    mangas.append(nouveau_manga)
-    sauvegarder_mangas(mangas)
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    nom = request.form['nom']
+    chapitre = request.form['chapitre']
+    saison = request.form['saison']
+    fini = request.form['fini'] == 'oui'
+    lien = request.form['lien']
+    note = int(request.form['note'])
+    image = request.form['image']
+
+    cur.execute('''
+        INSERT INTO mangas (nom, chapitre, saison, fini, lien, note, image)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    ''', (nom, chapitre, saison, fini, lien, note, image))
+
+    conn.commit()
+    conn.close()
+
     return redirect(url_for('index'))
 
-@app.route('/modifier/<int:index>', methods=['POST'])
-def modifier(index):
-    mangas = charger_mangas()
-    mangas[index]['nom'] = request.form['nom']
-    mangas[index]['chapitre'] = request.form['chapitre']
-    mangas[index]['saison'] = request.form['saison']
-    mangas[index]['fini'] = request.form['fini']  
-    mangas[index]['lien'] = request.form['lien']
-    mangas[index]['note'] = int(request.form['note'])
-    mangas[index]['image'] = request.form['image']
 
-    sauvegarder_mangas(mangas)  
+@app.route('/modifier/<int:id>', methods=['POST'])
+def modifier(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-    return redirect(url_for('index'))  
+    nom = request.form['nom']
+    chapitre = request.form['chapitre']
+    saison = request.form['saison']
+    fini = request.form['fini'] == 'oui'
+    lien = request.form['lien']
+    note = int(request.form['note'])
+    image = request.form['image']
+
+    cur.execute('''
+        UPDATE mangas
+        SET nom = %s, chapitre = %s, saison = %s, fini = %s, lien = %s, note = %s, image = %s
+        WHERE id = %s
+    ''', (nom, chapitre, saison, fini, lien, note, image, id))
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('index'))
 
 
 
@@ -103,15 +132,16 @@ def modifier_chapitre(index):
 
     return jsonify({"nouveauChapitre": manga['chapitre']})
 
-@app.route('/supprimer/<int:index>', methods=['POST'])
-def supprimer(index):
-    mangas = charger_mangas()  
-    try:
-        del mangas[index]  
-        sauvegarder_mangas(mangas)  
-        return '', 200  
-    except IndexError:
-        return "Manga introuvable", 404
+@app.route('/supprimer/<int:id>', methods=['POST'])
+def supprimer(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute('DELETE FROM mangas WHERE id = %s', (id,))
+    conn.commit()
+    conn.close()
+
+    return '', 200
 
 
 if __name__ == '__main__':
