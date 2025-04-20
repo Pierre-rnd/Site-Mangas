@@ -154,9 +154,9 @@
                 <h3>{{ manga.nom }}</h3>
                 <p>
                     Chapitre:
-                    <ul><button class="chapter-btn" onclick="modifierChapitre('{{ loop.index0 }}', -1)">-</button>
-                    <span id="chapitre-{{ loop.index0 }}">{{ manga.chapitre }}</span>
-                    <button class="chapter-btn" onclick="modifierChapitre('{{ loop.index0 }}', 1)">+</button>
+                    <ul><button class="chapter-btn" onclick="modifierChapitre('{{ manga.id }}', -1)">-</button>
+                    <span id="chapitre-{{ manga.id }}">{{ manga.chapitre }}</span>
+                    <button class="chapter-btn" onclick="modifierChapitre('{{ manga.id }}', 1)">+</button>
                 </p>
                 <p>Saison: {{ manga.saison }}</p>
                 <p>Fini: {{ 'Oui' if manga.fini == 'oui' else 'Non' }}</p>
@@ -169,7 +169,7 @@
                     {% endif %}
                 {% endfor %}</p>
                 <p><a href="{{ url_for('editer', id=manga.id) }}">Modifier</a> </p>
-                <button class="delete-btn" onclick="supprimerManga('{{ loop.index0 }}')">Supprimer</button>
+                <button class="delete-btn" onclick="supprimerManga('{{ manga.id }}')">Supprimer</button>
             </div>
         </div>
         {% endfor %}

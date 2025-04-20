@@ -118,17 +118,28 @@ def editer(id):
 
 
 
-@app.route('/modifier_chapitre/<int:index>', methods=['POST'])
-def modifier_chapitre(index):
-    mangas = charger_mangas()
+@app.route('/modifier_chapitre/<int:id>', methods=['POST'])
+def modifier_chapitre(id):
     changement = request.json['change']
 
-    manga = mangas[index]
-    manga['chapitre'] = str(max(1, int(manga['chapitre']) + changement))
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    sauvegarder_mangas(mangas)
+    cur.execute("SELECT chapitre FROM mangas WHERE id = %s", (id,))
+    manga = cur.fetchone()
 
-    return jsonify({"nouveauChapitre": manga['chapitre']})
+    if not manga:
+        return jsonify({"erreur": "Manga introuvable"}), 404
+
+    nouveau_chapitre = max(1, int(manga['chapitre']) + changement)
+
+    cur.execute("UPDATE mangas SET chapitre = %s WHERE id = %s", (nouveau_chapitre, id))
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return jsonify({"nouveauChapitre": nouveau_chapitre})
 
 @app.route('/supprimer/<int:id>', methods=['POST'])
 def supprimer(id):
