@@ -36,6 +36,8 @@ def sauvegarder_mangas(mangas):
 def index():
     mangas = charger_mangas()
     
+    for manga in mangas:
+        manga['fini'] = str(manga['fini']).lower() == 'true'
     
     search = request.args.get('search', '').lower()
     filter_fini = request.args.get('filter_fini', '')
