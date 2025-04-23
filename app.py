@@ -41,11 +41,17 @@ def index():
     filter_fini = request.args.get('filter_fini', '')
     filter_note = request.args.get('filter_note', '')
 
-    
+    if filter_fini == 'oui':
+        filter_fini_value = True
+    elif filter_fini == 'non':
+        filter_fini_value = False
+    else:
+        filter_fini_value = None
+
     filtered_mangas = []
     for manga in mangas:
         if (search in manga['nom'].lower() or search == '') and \
-           (filter_fini == '' or manga['fini'] == filter_fini) and \
+           (filter_fini_value is None or manga['fini'] == filter_fini_value) and \
            (filter_note == '' or manga['note'] == int(filter_note)):
             filtered_mangas.append(manga)
 
