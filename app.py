@@ -35,10 +35,10 @@ def sauvegarder_mangas(mangas):
 @app.route('/')
 def index():
     mangas = charger_mangas()
-
+    
     for manga in mangas:
         manga['fini'] = str(manga['fini']).lower() == 'true'
-
+    
     search = request.args.get('search', '').lower()
     filter_fini = request.args.get('filter_fini', '')
     filter_note = request.args.get('filter_note', '')
@@ -57,20 +57,7 @@ def index():
            (filter_note == '' or manga['note'] == int(filter_note)):
             filtered_mangas.append(manga)
 
-    total_mangas = len(filtered_mangas)
-    total_finis = sum(1 for m in filtered_mangas if m['fini'])
-    total_chapitres = sum(int(m['chapitre']) for m in filtered_mangas)
-    moyenne_notes = round(sum(m['note'] for m in filtered_mangas) / total_mangas, 2) if total_mangas else 0
-
-    stats = {
-        'total_mangas': total_mangas,
-        'total_finis': total_finis,
-        'total_chapitres': total_chapitres,
-        'moyenne_notes': moyenne_notes
-    }
-
-    return render_template('index.html', mangas=filtered_mangas, stats=stats)
-
+    return render_template('index.html', mangas=filtered_mangas)
 
 
 @app.route('/ajouter', methods=['POST'])
@@ -172,6 +159,33 @@ def supprimer(id):
     conn.close()
 
     return '', 200
+
+@app.route("/stats")
+def stats():
+    mangas = Manga.query.all()
+    total = len(mangas)
+    finis = sum(1 for m in mangas if m.fini)
+    en_cours = total - finis
+
+    if total > 0:
+        moyenne = round(sum(m.note for m in mangas) / total, 2)
+        meilleur = max(mangas, key=lambda m: m.note)
+        meilleur_nom = meilleur.nom
+        meilleur_note = meilleur.note
+    else:
+        moyenne = 0
+        meilleur_nom = "Aucun"
+        meilleur_note = 0
+
+    return jsonify({
+        "total": total,
+        "finis": finis,
+        "en_cours": en_cours,
+        "moyenne": moyenne,
+        "meilleur_nom": meilleur_nom,
+        "meilleur_note": meilleur_note
+    })
+
 
 
 if __name__ == '__main__':

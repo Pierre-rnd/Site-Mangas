@@ -56,18 +56,6 @@
             .catch(error => console.error('Erreur:', error));
         }
     </script>
-    <script>
-    const themeToggle = document.getElementById('theme-toggle');
-    themeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark');
-        localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-    });
-
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark');
-    }
-</script>
-
     <style>
         .stars {
             display: flex;
@@ -93,14 +81,7 @@
     </style>
 </head>
 <h1>Gestionnaire de Mangas</h1>
-    <div class="stats-box">
-    <h2>📊 Statistiques globales</h2>
-    <p>Total de mangas : <strong>{{ stats.total_mangas }}</strong></p>
-    <p>Mangas terminés : <strong>{{ stats.total_finis }}</strong></p>
-    <p>Chapitres lus : <strong>{{ stats.total_chapitres }}</strong></p>
-    <p>Note moyenne : <strong>{{ stats.moyenne_notes }}</strong>/5</p>
-    </div>
-    <button id="theme-toggle" class="button">🌗 Changer de thème</button>
+
 <body>
     <form method="GET" action="/">
         <label for="search">Rechercher:</label>
@@ -194,6 +175,41 @@
         </div>
         {% endfor %}
     </div>
-    
+<button id="stats-btn" title="Voir les statistiques"><i class="fas fa-chart-bar"></i></button>
+
+<div id="stats-overlay">
+    <div id="stats-panel">
+        <span id="close-stats">&times;</span>
+        <h2>Statistiques du site</h2>
+        <div id="stats-content">
+            <p><strong>Total de mangas :</strong> <span id="total"></span></p>
+            <p><strong>Mangas terminés :</strong> <span id="finis"></span></p>
+            <p><strong>Mangas en cours :</strong> <span id="en_cours"></span></p>
+            <p><strong>Note moyenne :</strong> <span id="moyenne"></span></p>
+            <p><strong>Meilleur manga :</strong> <span id="meilleur"></span></p>
+        </div>
+    </div>
+</div>
+
+<script>
+const statsBtn = document.getElementById('stats-btn');
+const overlay = document.getElementById('stats-overlay');
+const closeStats = document.getElementById('close-stats');
+
+statsBtn.onclick = async () => {
+    const res = await fetch('/stats');
+    const data = await res.json();
+    document.getElementById('total').textContent = data.total;
+    document.getElementById('finis').textContent = data.finis;
+    document.getElementById('en_cours').textContent = data.en_cours;
+    document.getElementById('moyenne').textContent = data.moyenne;
+    document.getElementById('meilleur').textContent = `${data.meilleur_nom} (${data.meilleur_note}★)`;
+    overlay.style.display = 'flex';
+};
+
+closeStats.onclick = () => overlay.style.display = 'none';
+overlay.onclick = e => { if (e.target === overlay) overlay.style.display = 'none'; };
+</script>
+
 </body>
 </html>
