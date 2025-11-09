@@ -35,10 +35,10 @@ def sauvegarder_mangas(mangas):
 @app.route('/')
 def index():
     mangas = charger_mangas()
-    
+
     for manga in mangas:
         manga['fini'] = str(manga['fini']).lower() == 'true'
-    
+
     search = request.args.get('search', '').lower()
     filter_fini = request.args.get('filter_fini', '')
     filter_note = request.args.get('filter_note', '')
@@ -57,7 +57,20 @@ def index():
            (filter_note == '' or manga['note'] == int(filter_note)):
             filtered_mangas.append(manga)
 
-    return render_template('index.html', mangas=filtered_mangas)
+    total_mangas = len(filtered_mangas)
+    total_finis = sum(1 for m in filtered_mangas if m['fini'])
+    total_chapitres = sum(int(m['chapitre']) for m in filtered_mangas)
+    moyenne_notes = round(sum(m['note'] for m in filtered_mangas) / total_mangas, 2) if total_mangas else 0
+
+    stats = {
+        'total_mangas': total_mangas,
+        'total_finis': total_finis,
+        'total_chapitres': total_chapitres,
+        'moyenne_notes': moyenne_notes
+    }
+
+    return render_template('index.html', mangas=filtered_mangas, stats=stats)
+
 
 
 @app.route('/ajouter', methods=['POST'])

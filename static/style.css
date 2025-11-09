@@ -247,3 +247,35 @@ button:hover {
 .manga-card .delete-btn:active {
   background-color: rgb(247, 119, 119);
 }
+
+.stats-container {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  background-color: #191c29;
+  padding: 10px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.stat span {
+  font-weight: bold;
+  color: #5ddcff;
+}
+
+body.dark {
+  background: #f0f0f0;
+  color: #121212;
+}
+
+body.dark .manga-card {
+  background-color: #e3e3e3;
+}
+
+body.dark .stats-container {
+  background-color: #e0e0e0;
+  color: #121212;
+}
