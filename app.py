@@ -160,18 +160,23 @@ def supprimer(id):
 
     return '', 200
 
-@app.route("/stats")
+@app.route('/stats')
 def stats():
-    mangas = Manga.query.all()
+    mangas = charger_mangas()
+
+    for m in mangas:
+        m['fini'] = str(m.get('fini')).lower() == 'true'
+
     total = len(mangas)
-    finis = sum(1 for m in mangas if m.fini)
+    finis = sum(1 for m in mangas if m['fini'])
     en_cours = total - finis
 
     if total > 0:
-        moyenne = round(sum(m.note for m in mangas) / total, 2)
-        meilleur = max(mangas, key=lambda m: m.note)
-        meilleur_nom = meilleur.nom
-        meilleur_note = meilleur.note
+        # note : assure-toi que 'note' est un int dans ta DB
+        moyenne = round(sum(int(m.get('note', 0)) for m in mangas) / total, 2)
+        meilleur = max(mangas, key=lambda m: int(m.get('note', 0)))
+        meilleur_nom = meilleur.get('nom', 'Aucun')
+        meilleur_note = int(meilleur.get('note', 0))
     else:
         moyenne = 0
         meilleur_nom = "Aucun"
@@ -185,6 +190,7 @@ def stats():
         "meilleur_nom": meilleur_nom,
         "meilleur_note": meilleur_note
     })
+
 
 
 
