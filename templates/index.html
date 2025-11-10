@@ -83,6 +83,7 @@
 <h1>Gestionnaire de Mangas</h1>
 
 <body>
+    <button class="stats-btn" onclick="toggleStats()">📊</button>
     <form method="GET" action="/">
         <label for="search">Rechercher:</label>
         <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}">
@@ -178,7 +179,6 @@
         </div>
         {% endfor %}
     </div>
-<button id="stats-btn" title="Voir les statistiques"><i class="fas fa-chart-bar"></i></button>
 
 <div id="stats-overlay">
     <div id="stats-panel">
