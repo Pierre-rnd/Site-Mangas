@@ -150,6 +150,9 @@
     <div class="manga-cards">
         {% for manga in mangas %}
         <div class="manga-card">
+            {% if manga.non_lu %}
+            <div class="badge-non-lu">Non lu depuis 1 semaine</div>
+            {% endif %}
             <img src="{{ manga.image }}" alt="{{ manga.nom }}">
             <div class="manga-details">
                 <h3>{{ manga.nom }}</h3>
@@ -161,7 +164,7 @@
                 </p>
                 <p>Saison: {{ manga.saison }}</p>
                 <p>Statut: <span style="color: {{ 'green' if manga.fini else 'red' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
-                <p><a href="{{ manga.lien }}" target="_blank">Lire le Manga</a></p>
+                <p><a href="{{ url_for('lire_manga', id=manga.id) }}" target="_blank">Lire le manga</a></p>
                 <p>Note: {% for i in range(1, 6) %}
                     {% if i <= manga.note %}
                         &#9733;

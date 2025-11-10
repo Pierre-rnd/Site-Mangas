@@ -3,6 +3,8 @@ import os
 import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from datetime import datetime, timedelta
+
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -38,7 +40,19 @@ def index():
     
     for manga in mangas:
         manga['fini'] = str(manga['fini']).lower() == 'true'
-    
+
+        derniere_lecture = manga.get('derniere_lecture')
+
+        if derniere_lecture:
+            try:
+                date_lecture = datetime.strptime(str(derniere_lecture), '%Y-%m-%d').date()
+                delta = datetime.now().date() - date_lecture
+                manga['non_lu'] = (delta.days >= 7 and not manga['fini'])
+            except Exception:
+                manga['non_lu'] = False
+        else:
+            manga['non_lu'] = False  
+
     search = request.args.get('search', '').lower()
     filter_fini = request.args.get('filter_fini', '')
     filter_note = request.args.get('filter_note', '')
@@ -58,6 +72,7 @@ def index():
             filtered_mangas.append(manga)
 
     return render_template('index.html', mangas=filtered_mangas)
+
 
 
 @app.route('/ajouter', methods=['POST'])
@@ -172,7 +187,6 @@ def stats():
     en_cours = total - finis
 
     if total > 0:
-        # note : assure-toi que 'note' est un int dans ta DB
         moyenne = round(sum(int(m.get('note', 0)) for m in mangas) / total, 2)
         meilleur = max(mangas, key=lambda m: int(m.get('note', 0)))
         meilleur_nom = meilleur.get('nom', 'Aucun')
@@ -192,6 +206,26 @@ def stats():
     })
 
 
+@app.route('/lire/<int:id>')
+def lire_manga(id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute("SELECT lien FROM mangas WHERE id = %s", (id,))
+    manga = cur.fetchone()
+
+    if not manga:
+        cur.close()
+        conn.close()
+        return "Manga introuvable", 404
+
+    cur.execute("UPDATE mangas SET derniere_lecture = %s WHERE id = %s", (datetime.now().date(), id))
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return redirect(manga['lien'])
 
 
 if __name__ == '__main__':
