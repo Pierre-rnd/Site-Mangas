@@ -83,7 +83,6 @@
 <h1>Gestionnaire de Mangas</h1>
 
 <body>
-    <button class="stats-btn" onclick="toggleStats()">📊</button>
     <form method="GET" action="/">
         <label for="search">Rechercher:</label>
         <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}">
@@ -180,6 +179,7 @@
         {% endfor %}
     </div>
 
+<button id="stats-btn" title="Voir les statistiques">📊</button>
 <div id="stats-overlay">
     <div id="stats-panel">
         <span id="close-stats">&times;</span>
@@ -195,24 +195,49 @@
 </div>
 
 <script>
-const statsBtn = document.getElementById('stats-btn');
-const overlay = document.getElementById('stats-overlay');
-const closeStats = document.getElementById('close-stats');
+  const statsBtn = document.getElementById('stats-btn');
+  const overlay = document.getElementById('stats-overlay');
+  const closeBtn = document.getElementById('close-stats');
 
-statsBtn.onclick = async () => {
-    const res = await fetch('/stats');
-    const data = await res.json();
-    document.getElementById('total').textContent = data.total;
-    document.getElementById('finis').textContent = data.finis;
-    document.getElementById('en_cours').textContent = data.en_cours;
-    document.getElementById('moyenne').textContent = data.moyenne;
-    document.getElementById('meilleur').textContent = `${data.meilleur_nom} (${data.meilleur_note}★)`;
-    overlay.style.display = 'flex';
-};
+  async function openStats() {
+    try {
+      const res = await fetch('/stats');
+      if (!res.ok) throw new Error('Erreur réseau');
+      const data = await res.json();
+      document.getElementById('total').textContent = data.total ?? '0';
+      document.getElementById('finis').textContent = data.finis ?? '0';
+      document.getElementById('en_cours').textContent = data.en_cours ?? '0';
+      document.getElementById('moyenne').textContent = data.moyenne ?? '0';
+      document.getElementById('meilleur').textContent = (data.meilleur_nom ? `${data.meilleur_nom} (${data.meilleur_note}★)` : '—');
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+    } catch (err) {
+      console.error('Impossible de charger les stats :', err);
+      alert("Impossible de récupérer les statistiques. Vérifie la route /stats côté serveur.");
+    }
+  }
 
-closeStats.onclick = () => overlay.style.display = 'none';
-overlay.onclick = e => { if (e.target === overlay) overlay.style.display = 'none'; };
+  statsBtn.addEventListener('click', openStats);
+  closeBtn.addEventListener('click', () => {
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+  });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('show')) {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+  });
 </script>
+
 
 </body>
 </html>

@@ -33,21 +33,28 @@ h1 {
 }
 
 form {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-glow);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  width: 90%;
-  max-width: 700px;
-  box-shadow: 0 0 20px rgba(0, 183, 255, 0.15);
-  transition: all 0.3s ease;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
-form button[type="submit"] {
-  margin-right: 10px;
+form .search-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex: 1 1 auto;
 }
+
+form button[type="submit"],
+form a.button {
+  min-width: 120px;
+  margin-top: 6px;
+}
+
+form button[type="submit"] { margin-right: 12px; }
+form a.button { margin-left: 0; }
+
 
 form .button {
   margin-left: 10px;
@@ -204,7 +211,7 @@ button[onclick="toggleForm()"] {
   }
 }
 
-.stats-btn {
+#stats-btn {
   position: fixed;
   top: 20px;
   left: 20px;
@@ -217,12 +224,60 @@ button[onclick="toggleForm()"] {
   color: white;
   font-size: 1.3em;
   box-shadow: 0 0 15px var(--accent);
-  transition: all 0.3s ease;
-  z-index: 1000;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  z-index: 1100;
+}
+#stats-btn:hover { transform: scale(1.08); box-shadow: 0 0 30px var(--accent2); }
+
+#stats-overlay {
+  display: none;             
+  position: fixed;
+  inset: 0;                  
+  background: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+  z-index: 1090;
 }
 
-.stats-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 25px var(--accent2);
+#stats-panel {
+  width: 340px;
+  max-width: calc(100% - 40px);
+  background: linear-gradient(180deg, rgba(25,28,41,0.95), rgba(18,20,32,0.95));
+  border-radius: 12px;
+  padding: 22px;
+  color: var(--text-color);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 25px rgba(93,220,255,0.08);
+  border: 1px solid rgba(93,220,255,0.08);
+  position: relative;
+  text-align: left;
 }
 
+/* Close */
+#close-stats {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  color: #fff;
+  cursor: pointer;
+}
+#close-stats:hover { color: var(--accent); }
+
+/* Contenu */
+#stats-panel h2 {
+  margin: 0 0 12px 0;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 1.15rem;
+  text-align: center;
+}
+#stats-content p { margin: 8px 0; font-size: 0.98rem; }
+
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+#stats-overlay.show #stats-panel { animation: panelIn 180ms ease-out forwards; }
+#stats-overlay.show { display: flex; }
