@@ -30,23 +30,31 @@
             setTimeout(function() { toast.remove(); }, 300);
         }, 2800);
     }
-    function supprimerManga(index) {
-        if (confirm("Êtes-vous sûr de vouloir supprimer ce manga ?")) {
-            fetch(`/supprimer/${index}`, {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => {
-                if (response.ok) {
+    var deleteModalId = null;
+    function supprimerManga(id) {
+        deleteModalId = id;
+        document.getElementById('delete-modal').classList.add('show');
+        document.getElementById('delete-overlay').classList.add('show');
+    }
+    function closeDeleteModal() {
+        deleteModalId = null;
+        document.getElementById('delete-modal').classList.remove('show');
+        document.getElementById('delete-overlay').classList.remove('show');
+    }
+    function confirmDelete() {
+        if (!deleteModalId) return;
+        var id = deleteModalId;
+        closeDeleteModal();
+        fetch('/supprimer/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+            .then(function(r) {
+                if (r.ok) {
                     showToast('Manga supprimé');
                     setTimeout(function() { window.location.reload(); }, 1200);
-                } else {
-                    alert('Erreur : impossible de supprimer le manga.');
-                }
+                } else { alert('Erreur : impossible de supprimer le manga.'); }
             })
             .catch(function() { alert('Erreur : impossible de contacter le serveur.'); });
-        }
-    }</script>
+    }
+</script>
     <script>
         function modifierChapitre(index, change) {
             fetch(`/modifier_chapitre/${index}`, {
@@ -117,7 +125,10 @@
             <option value="derniere_lecture" {% if request.args.get('sort') == 'derniere_lecture' %}selected{% endif %}>Dernière lecture</option>
             <option value="chapitre" {% if request.args.get('sort') == 'chapitre' %}selected{% endif %}>Chapitre (↑)</option>
         </select>
-        
+        <label class="filter-checkbox">
+            <input type="checkbox" name="non_lu" value="1" {% if request.args.get('non_lu') == '1' %}checked{% endif %}>
+            <span>Non lus 7j+</span>
+        </label>
         <button type="submit">Filtrer</button>
         <a href="/" class="button button-outline">Réinitialiser</a>
     </form>
@@ -125,10 +136,12 @@
 
     <div class="toolbar">
         <button onclick="toggleForm()" class="btn-add-toggle" id="btn-add-manga" title="Raccourci : N">+ Ajouter un manga</button>
+        <a href="{{ url_for('export_json') }}" class="button button-export" download title="Télécharger une sauvegarde JSON">📥 Export</a>
         <div class="view-toggle" role="group" aria-label="Vue">
             <button type="button" class="view-btn active" data-view="grid" title="Vue grille">⊞</button>
             <button type="button" class="view-btn" data-view="list" title="Vue liste">≡</button>
         </div>
+        <button type="button" id="help-btn" class="help-btn" title="Raccourcis et aide">?</button>
     </div>
     
     <form id="mangaForm" action="/ajouter" method="post" class="form-add-manga" style="display:none;">
@@ -210,6 +223,32 @@
         {% endif %}
     </div>
 
+<!-- Modal confirmation suppression -->
+<div id="delete-overlay" class="modal-overlay" aria-hidden="true"></div>
+<div id="delete-modal" class="modal confirm-modal">
+    <h3>Supprimer ce manga ?</h3>
+    <p>Cette action est irréversible.</p>
+    <div class="modal-actions">
+        <button type="button" class="button button-outline" onclick="closeDeleteModal()">Annuler</button>
+        <button type="button" class="button delete-btn" onclick="confirmDelete()">Supprimer</button>
+    </div>
+</div>
+
+<!-- Modal aide / raccourcis -->
+<div id="help-overlay" class="modal-overlay" aria-hidden="true"></div>
+<div id="help-modal" class="modal help-modal">
+    <span class="modal-close" id="close-help">&times;</span>
+    <h3>Raccourcis & aide</h3>
+    <ul>
+        <li><kbd>N</kbd> Ouvrir / fermer le formulaire « Ajouter un manga »</li>
+        <li><kbd>S</kbd> Focus sur la recherche</li>
+        <li><kbd>Échap</kbd> Fermer le panneau stats ou le formulaire</li>
+        <li><strong>⊞ / ≡</strong> Vue grille ou liste (préférence enregistrée)</li>
+        <li><strong>Export</strong> Télécharge une sauvegarde JSON de ta liste</li>
+        <li><strong>Non lus 7j+</strong> Filtre les mangas non lus depuis au moins 7 jours</li>
+    </ul>
+</div>
+
 <button id="stats-btn" title="Voir les statistiques">📊</button>
 <div id="stats-overlay">
     <div id="stats-panel">
@@ -263,8 +302,18 @@
     }
   });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && overlay.classList.contains('show')) {
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    if (document.getElementById('delete-modal').classList.contains('show')) {
+      closeDeleteModal();
+      return;
+    }
+    if (document.getElementById('help-modal').classList.contains('show')) {
+      document.getElementById('help-overlay').classList.remove('show');
+      document.getElementById('help-modal').classList.remove('show');
+      return;
+    }
+    if (overlay.classList.contains('show')) {
       overlay.classList.remove('show');
       overlay.setAttribute('aria-hidden', 'true');
     }
@@ -311,19 +360,42 @@
     }
   });
 
-  // Bascule vue grille / liste
+  // Bascule vue grille / liste + sauvegarde préférence
+  var viewKey = 'manga-view';
+  var listEl = document.getElementById('manga-cards');
+  function applyView(view) {
+    var isList = view === 'list';
+    listEl.classList.toggle('view-list', isList);
+    document.querySelectorAll('.view-btn').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-view') === view);
+    });
+    try { localStorage.setItem(viewKey, view); } catch (e) {}
+  }
+  try {
+    var saved = localStorage.getItem(viewKey);
+    if (saved === 'list' || saved === 'grid') applyView(saved);
+  } catch (e) {}
   document.querySelectorAll('.view-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      document.querySelectorAll('.view-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      var list = document.getElementById('manga-cards');
-      if (btn.getAttribute('data-view') === 'list') {
-        list.classList.add('view-list');
-      } else {
-        list.classList.remove('view-list');
-      }
+      applyView(btn.getAttribute('data-view'));
     });
   });
+
+  // Modal aide
+  document.getElementById('help-btn').addEventListener('click', function() {
+    document.getElementById('help-overlay').classList.add('show');
+    document.getElementById('help-modal').classList.add('show');
+  });
+  document.getElementById('close-help').addEventListener('click', function() {
+    document.getElementById('help-overlay').classList.remove('show');
+    document.getElementById('help-modal').classList.remove('show');
+  });
+  document.getElementById('help-overlay').addEventListener('click', function() {
+    document.getElementById('help-overlay').classList.remove('show');
+    document.getElementById('help-modal').classList.remove('show');
+  });
+
+  document.getElementById('delete-overlay').addEventListener('click', closeDeleteModal);
 </script>
 
 

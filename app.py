@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for , jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 import os
 import json
 import psycopg2
@@ -64,7 +64,8 @@ def index():
     search = request.args.get('search', '').lower()
     filter_fini = request.args.get('filter_fini', '')
     filter_note = request.args.get('filter_note', '')
-    sort_by = request.args.get('sort', 'nom')  # nom, note, derniere_lecture, chapitre
+    filter_non_lu = request.args.get('non_lu', '') == '1'
+    sort_by = request.args.get('sort', 'nom')
 
     if filter_fini == 'oui':
         filter_fini_value = True
@@ -77,7 +78,8 @@ def index():
     for manga in mangas:
         if (search in manga['nom'].lower() or search == '') and \
            (filter_fini_value is None or manga['fini'] == filter_fini_value) and \
-           (filter_note == '' or (filter_note and manga['note'] == int(filter_note))):
+           (filter_note == '' or (filter_note and manga['note'] == int(filter_note))) and \
+           (not filter_non_lu or manga.get('non_lu')):
             filtered_mangas.append(manga)
 
     # Tri
@@ -264,6 +266,24 @@ def lire_manga(id):
     conn.close()
 
     return redirect(manga['lien'])
+
+
+@app.route('/export')
+def export_json():
+    """Exporte la liste complète des mangas en JSON (sauvegarde)."""
+    mangas = charger_mangas()
+    out = []
+    for m in mangas:
+        row = dict(m)
+        if row.get('derniere_lecture') is not None:
+            row['derniere_lecture'] = str(row['derniere_lecture'])
+        out.append(row)
+    data = json.dumps(out, ensure_ascii=False, indent=2)
+    return Response(
+        data,
+        mimetype='application/json',
+        headers={'Content-Disposition': 'attachment; filename=mangas-sauvegarde.json'}
+    )
 
 
 if __name__ == '__main__':

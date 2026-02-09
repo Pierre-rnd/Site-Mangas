@@ -523,6 +523,130 @@ button:hover, .button:hover {
   box-shadow: none !important;
 }
 
+.button-export {
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center;
+  width: auto !important;
+  min-width: auto !important;
+  padding: 0.5rem 1rem !important;
+  margin: 0 !important;
+}
+
+.help-btn {
+  width: 40px !important;
+  min-width: 40px !important;
+  margin: 0 !important;
+  padding: 0.4rem !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.help-btn:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: var(--accent) !important;
+}
+
+.filter-checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin-top: 0 !important;
+}
+
+.filter-checkbox input { width: auto !important; margin: 0 !important; }
+.filter-checkbox span { font-size: 0.95rem; }
+
+/* Modals (suppression, aide) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1500;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal {
+  background: linear-gradient(180deg, rgba(25, 28, 41, 0.98), rgba(18, 20, 32, 0.98));
+  border: 1px solid rgba(0, 183, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  max-width: 90vw;
+  width: 380px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+  transform: scale(0.96);
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.modal-overlay.show .modal {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.modal h3 {
+  margin: 0 0 0.75rem 0;
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: var(--accent);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  justify-content: flex-end;
+}
+
+.modal-actions .button { margin-top: 0 !important; }
+
+.help-modal ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0 0;
+}
+
+.help-modal li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.95rem;
+}
+
+.help-modal li:last-child { border-bottom: none; }
+
+.help-modal kbd {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-size: 0.9em;
+  margin-right: 0.5rem;
+}
+
 /* Vue liste */
 .manga-cards.view-list {
   flex-direction: column;
