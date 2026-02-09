@@ -291,6 +291,30 @@ def export_json():
     )
 
 
+@app.route('/export/csv')
+def export_csv():
+    """Exporte la liste des mangas en CSV."""
+    import csv
+    from io import StringIO
+    mangas = charger_mangas()
+    output = StringIO()
+    output.write('\ufeff')  # BOM UTF-8 pour Excel
+    writer = csv.writer(output)
+    writer.writerow(['id', 'nom', 'chapitre', 'saison', 'fini', 'lien', 'note', 'image', 'derniere_lecture'])
+    for m in mangas:
+        writer.writerow([
+            m.get('id'), m.get('nom'), m.get('chapitre'), m.get('saison'),
+            m.get('fini'), m.get('lien'), m.get('note'), m.get('image'),
+            str(m.get('derniere_lecture') or '')
+        ])
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': 'attachment; filename=mangas-sauvegarde.csv'}
+    )
+
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000)) 
     app.run(host='0.0.0.0', port=port)

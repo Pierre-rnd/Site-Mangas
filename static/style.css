@@ -399,6 +399,12 @@ button:hover, .button:hover {
   color: var(--accent);
 }
 
+.chapter-btn.loading,
+.chapter-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .manga-details .chapter-row {
   margin-bottom: 0.25rem;
 }
@@ -430,6 +436,43 @@ button:hover, .button:hover {
 }
 
 .filter-form label { margin-top: 0; }
+
+/* Filtres actifs (tags) */
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 0.75rem 0;
+}
+
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  background: rgba(0, 183, 255, 0.2);
+  border: 1px solid rgba(0, 183, 255, 0.4);
+  border-radius: 999px;
+  color: var(--text-color);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.filter-tag:hover {
+  background: rgba(0, 183, 255, 0.3);
+  border-color: var(--accent);
+}
+
+body.theme-light .filter-tag {
+  background: rgba(0, 102, 170, 0.15);
+  border-color: rgba(0, 102, 170, 0.35);
+  color: #1a1f2e;
+}
+
+body.theme-light .filter-tag:hover {
+  background: rgba(0, 102, 170, 0.25);
+}
 
 /* Page éditer */
 .back-link {

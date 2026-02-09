@@ -68,18 +68,24 @@
 </script>
     <script>
         function modifierChapitre(index, change) {
-            fetch(`/modifier_chapitre/${index}`, {
+            var el = document.getElementById('chapitre-' + index);
+            var card = el && el.closest('.manga-card');
+            var btns = card ? card.querySelectorAll('.chapter-btn') : [];
+            btns.forEach(function(b) { b.disabled = true; b.classList.add('loading'); });
+            fetch('/modifier_chapitre/' + index, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ change: change })
             })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById(`chapitre-${index}`).textContent = data.nouveauChapitre;
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (el) el.textContent = data.nouveauChapitre;
+                btns.forEach(function(b) { b.disabled = false; b.classList.remove('loading'); });
             })
-            .catch(error => console.error('Erreur:', error));
+            .catch(function(err) {
+                console.error('Erreur:', err);
+                btns.forEach(function(b) { b.disabled = false; b.classList.remove('loading'); });
+            });
         }
     </script>
     <style>
@@ -148,11 +154,22 @@
         <button type="submit">Filtrer</button>
         <a href="/" class="button button-outline">Réinitialiser</a>
     </form>
+    {% set q = request.args %}
+    {% if q.get('search') or q.get('filter_fini') or q.get('filter_note') or q.get('non_lu') %}
+    <div class="active-filters">
+        {% if q.get('search') %}<a href="{{ url_for('index', search='', filter_fini=q.get('filter_fini'), filter_note=q.get('filter_note'), non_lu=q.get('non_lu'), sort=q.get('sort'), order=q.get('order')) }}" class="filter-tag">« {{ q.get('search') }} » ×</a>{% endif %}
+        {% if q.get('filter_fini') == 'oui' %}<a href="{{ url_for('index', search=q.get('search'), filter_fini='', filter_note=q.get('filter_note'), non_lu=q.get('non_lu'), sort=q.get('sort'), order=q.get('order')) }}" class="filter-tag">Terminés ×</a>{% endif %}
+        {% if q.get('filter_fini') == 'non' %}<a href="{{ url_for('index', search=q.get('search'), filter_fini='', filter_note=q.get('filter_note'), non_lu=q.get('non_lu'), sort=q.get('sort'), order=q.get('order')) }}" class="filter-tag">En cours ×</a>{% endif %}
+        {% if q.get('filter_note') %}<a href="{{ url_for('index', search=q.get('search'), filter_fini=q.get('filter_fini'), filter_note='', non_lu=q.get('non_lu'), sort=q.get('sort'), order=q.get('order')) }}" class="filter-tag">Note {{ q.get('filter_note') }} ★ ×</a>{% endif %}
+        {% if q.get('non_lu') == '1' %}<a href="{{ url_for('index', search=q.get('search'), filter_fini=q.get('filter_fini'), filter_note=q.get('filter_note'), non_lu='', sort=q.get('sort'), order=q.get('order')) }}" class="filter-tag">Non lus 7j+ ×</a>{% endif %}
+    </div>
+    {% endif %}
     <p class="results-count">{{ mangas|length }} manga{{ 's' if mangas|length != 1 else '' }} affiché{{ 's' if mangas|length != 1 else '' }}</p>
 
     <div class="toolbar">
         <button onclick="toggleForm()" class="btn-add-toggle" id="btn-add-manga" title="Raccourci : N">+ Ajouter un manga</button>
-        <a href="{{ url_for('export_json') }}" class="button button-export" download title="Télécharger une sauvegarde JSON">📥 Export</a>
+        <a href="{{ url_for('export_json') }}" class="button button-export" download title="Sauvegarde JSON">📥 JSON</a>
+        <a href="{{ url_for('export_csv') }}" class="button button-export" download title="Sauvegarde CSV (Excel)">📥 CSV</a>
         <div class="view-toggle" role="group" aria-label="Vue">
             <button type="button" class="view-btn active" data-view="grid" title="Vue grille">⊞</button>
             <button type="button" class="view-btn" data-view="list" title="Vue liste">≡</button>
@@ -264,7 +281,9 @@
         <li><kbd>S</kbd> Focus sur la recherche</li>
         <li><kbd>Échap</kbd> Fermer le panneau stats ou le formulaire</li>
         <li><strong>⊞ / ≡</strong> Vue grille ou liste (préférence enregistrée)</li>
-        <li><strong>Export</strong> Télécharge une sauvegarde JSON de ta liste</li>
+        <li><strong>JSON / CSV</strong> Télécharge une sauvegarde de ta liste</li>
+        <li><strong>Recherche</strong> La recherche se met à jour automatiquement en tapant</li>
+        <li><strong>Filtres actifs</strong> Clique sur un tag × pour retirer ce filtre</li>
         <li><strong>Non lus 7j+</strong> Filtre les mangas non lus depuis au moins 7 jours</li>
         <li><strong>Ordre</strong> Ascendant / Descendant pour inverser le tri</li>
         <li><strong>☀ / 🌙</strong> Thème clair ou sombre (préférence enregistrée)</li>
@@ -404,6 +423,19 @@
       applyView(btn.getAttribute('data-view'));
     });
   });
+
+  // Recherche instantanée (debounce 400 ms)
+  (function() {
+    var searchInput = document.getElementById('search');
+    var filterForm = document.querySelector('.filter-form');
+    var searchTimeout;
+    if (searchInput && filterForm) {
+      searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() { filterForm.submit(); }, 400);
+      });
+    }
+  })();
 
   // Modal aide
   document.getElementById('help-btn').addEventListener('click', function() {
