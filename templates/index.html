@@ -17,27 +17,34 @@
         }
     </script>
     <script>
+    function showToast(message, type) {
+        type = type || 'success';
+        var container = document.getElementById('toast-container');
+        var toast = document.createElement('div');
+        toast.className = 'toast toast-' + type;
+        toast.textContent = message;
+        container.appendChild(toast);
+        requestAnimationFrame(function() { toast.classList.add('show'); });
+        setTimeout(function() {
+            toast.classList.remove('show');
+            setTimeout(function() { toast.remove(); }, 300);
+        }, 2800);
+    }
     function supprimerManga(index) {
         if (confirm("Êtes-vous sûr de vouloir supprimer ce manga ?")) {
             fetch(`/supprimer/${index}`, {
                 method: 'POST', 
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+                headers: { 'Content-Type': 'application/json' }
             })
             .then(response => {
                 if (response.ok) {
-                    
-                    window.location.reload();
+                    showToast('Manga supprimé');
+                    setTimeout(function() { window.location.reload(); }, 1200);
                 } else {
-                    console.error('Erreur lors de la suppression du manga.');
                     alert('Erreur : impossible de supprimer le manga.');
                 }
             })
-            .catch(error => {
-                console.error('Erreur lors de la requête :', error);
-                alert('Erreur : impossible de contacter le serveur.');
-            });
+            .catch(function() { alert('Erreur : impossible de contacter le serveur.'); });
         }
     }</script>
     <script>
@@ -83,9 +90,10 @@
 <h1>Gestionnaire de Mangas</h1>
 
 <body>
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
     <form method="GET" action="/" class="filter-form">
         <label for="search">Rechercher</label>
-        <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nom du manga...">
+        <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nom du manga..." title="Raccourci : S">
         
         <label for="filter-fini">Statut</label>
         <select id="filter-fini" name="filter_fini">
@@ -114,9 +122,14 @@
         <a href="/" class="button button-outline">Réinitialiser</a>
     </form>
     <p class="results-count">{{ mangas|length }} manga{{ 's' if mangas|length != 1 else '' }} affiché{{ 's' if mangas|length != 1 else '' }}</p>
-    
-    
-    <button onclick="toggleForm()" class="btn-add-toggle">+ Ajouter un manga</button>
+
+    <div class="toolbar">
+        <button onclick="toggleForm()" class="btn-add-toggle" id="btn-add-manga" title="Raccourci : N">+ Ajouter un manga</button>
+        <div class="view-toggle" role="group" aria-label="Vue">
+            <button type="button" class="view-btn active" data-view="grid" title="Vue grille">⊞</button>
+            <button type="button" class="view-btn" data-view="list" title="Vue liste">≡</button>
+        </div>
+    </div>
     
     <form id="mangaForm" action="/ajouter" method="post" class="form-add-manga" style="display:none;">
         <label for="nom">Nom du Manga:</label>
@@ -155,7 +168,7 @@
         <button type="submit">Ajouter Manga</button>
     </form>
     
-    <div class="manga-cards">
+    <div class="manga-cards" id="manga-cards">
         {% if not mangas %}
         <div class="empty-state">
             <div class="empty-state-icon">📚</div>
@@ -179,6 +192,7 @@
                     <button type="button" class="chapter-btn" onclick="modifierChapitre('{{ manga.id }}', 1)" aria-label="Augmenter le chapitre">+</button>
                 </div>
                 <p>Saison : {{ manga.saison }}</p>
+                <p class="last-read" title="Dernière lecture">📅 {{ manga.last_read_label }}</p>
                 <p>Statut : <span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
                 <p><a href="{{ url_for('lire_manga', id=manga.id) }}" target="_blank" class="link-read">Lire le manga</a></p>
                 <p>Note: {% for i in range(1, 6) %}
@@ -205,6 +219,7 @@
             <p><strong>Total de mangas :</strong> <span id="total"></span></p>
             <p><strong>Mangas terminés :</strong> <span id="finis"></span></p>
             <p><strong>Mangas en cours :</strong> <span id="en_cours"></span></p>
+            <p><strong>Non lus depuis 7+ jours :</strong> <span id="non_lu_7j"></span></p>
             <p><strong>Note moyenne :</strong> <span id="moyenne"></span></p>
             <p><strong>Meilleur manga :</strong> <span id="meilleur"></span></p>
         </div>
@@ -224,6 +239,7 @@
       document.getElementById('total').textContent = data.total ?? '0';
       document.getElementById('finis').textContent = data.finis ?? '0';
       document.getElementById('en_cours').textContent = data.en_cours ?? '0';
+      document.getElementById('non_lu_7j').textContent = data.non_lu_7j ?? '0';
       document.getElementById('moyenne').textContent = data.moyenne ?? '0';
       document.getElementById('meilleur').textContent = (data.meilleur_nom ? `${data.meilleur_nom} (${data.meilleur_note}★)` : '—');
       overlay.classList.add('show');
@@ -252,6 +268,61 @@
       overlay.classList.remove('show');
       overlay.setAttribute('aria-hidden', 'true');
     }
+  });
+
+  // Toasts au chargement (après ajout / modification)
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var clean = false;
+    if (params.get('added') === '1') {
+      showToast('Manga ajouté');
+      params.delete('added');
+      clean = true;
+    }
+    if (params.get('updated') === '1') {
+      showToast('Modifications enregistrées');
+      params.delete('updated');
+      clean = true;
+    }
+    if (clean) {
+      var q = params.toString();
+      history.replaceState({}, '', window.location.pathname + (q ? '?' + q : ''));
+    }
+  })();
+
+  // Raccourcis clavier
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    if (e.key === 'n' || e.key === 'N') {
+      e.preventDefault();
+      toggleForm();
+    }
+    if (e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      document.getElementById('search').focus();
+    }
+    if (e.key === 'Escape') {
+      var form = document.getElementById('mangaForm');
+      if (form && form.style.display === 'block') {
+        toggleForm();
+      }
+    }
+  });
+
+  // Bascule vue grille / liste
+  document.querySelectorAll('.view-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.view-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      var list = document.getElementById('manga-cards');
+      if (btn.getAttribute('data-view') === 'list') {
+        list.classList.add('view-list');
+      } else {
+        list.classList.remove('view-list');
+      }
+    });
   });
 </script>
 

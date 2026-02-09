@@ -48,10 +48,18 @@ def index():
                 date_lecture = datetime.strptime(str(derniere_lecture), '%Y-%m-%d').date()
                 delta = datetime.now().date() - date_lecture
                 manga['non_lu'] = (delta.days >= 7 and not manga['fini'])
+                if delta.days == 0:
+                    manga['last_read_label'] = "Lu aujourd'hui"
+                elif delta.days == 1:
+                    manga['last_read_label'] = "Lu hier"
+                else:
+                    manga['last_read_label'] = f"Lu il y a {delta.days} jours"
             except Exception:
                 manga['non_lu'] = False
+                manga['last_read_label'] = "—"
         else:
-            manga['non_lu'] = False  
+            manga['non_lu'] = False
+            manga['last_read_label'] = "Jamais lu"  
 
     search = request.args.get('search', '').lower()
     filter_fini = request.args.get('filter_fini', '')
@@ -115,7 +123,7 @@ def ajouter():
     conn.commit()
     conn.close()
 
-    return redirect(url_for('index'))
+    return redirect(url_for('index', added=1))
 
 
 @app.route('/modifier/<int:id>', methods=['POST'])
@@ -140,8 +148,7 @@ def modifier(id):
     conn.commit()
     conn.close()
 
-    return redirect(url_for('index'))
-
+    return redirect(url_for('index', updated=1))
 
 
 @app.route('/editer/<int:id>', methods=['GET'])
@@ -204,6 +211,17 @@ def stats():
     total = len(mangas)
     finis = sum(1 for m in mangas if m['fini'])
     en_cours = total - finis
+    non_lu_count = 0
+    for m in mangas:
+        dl = m.get('derniere_lecture')
+        if dl is None:
+            continue
+        try:
+            d = datetime.strptime(str(dl), '%Y-%m-%d').date() if isinstance(dl, str) else dl
+            if (datetime.now().date() - d).days >= 7 and not m['fini']:
+                non_lu_count += 1
+        except Exception:
+            pass
 
     if total > 0:
         moyenne = round(sum(int(m.get('note', 0)) for m in mangas) / total, 2)
@@ -219,6 +237,7 @@ def stats():
         "total": total,
         "finis": finis,
         "en_cours": en_cours,
+        "non_lu_7j": non_lu_count,
         "moyenne": moyenne,
         "meilleur_nom": meilleur_nom,
         "meilleur_note": meilleur_note

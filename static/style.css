@@ -453,9 +453,144 @@ button:hover, .button:hover {
 .form-edit label { margin-top: 0.6rem; }
 .form-edit .stars { margin-top: 0.4rem; }
 
+/* Toasts */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  background: linear-gradient(135deg, rgba(30, 35, 50, 0.98), rgba(20, 22, 35, 0.98));
+  border: 1px solid rgba(0, 183, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-success { border-color: rgba(46, 204, 113, 0.5); }
+
+/* Barre d’outils + vue grille/liste */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.view-btn {
+  width: 44px !important;
+  min-width: 44px !important;
+  margin: 0 !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 0 !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  font-size: 1.2rem !important;
+}
+
+.view-btn:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.view-btn.active {
+  background: linear-gradient(90deg, var(--accent), var(--accent2)) !important;
+  box-shadow: none !important;
+}
+
+/* Vue liste */
+.manga-cards.view-list {
+  flex-direction: column;
+  align-items: stretch;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.manga-cards.view-list .manga-card {
+  width: 100%;
+  max-width: none;
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  text-align: left;
+}
+
+.manga-cards.view-list .manga-card img {
+  width: 120px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.manga-cards.view-list .manga-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  text-align: left;
+}
+
+.manga-cards.view-list .manga-details p {
+  margin: 0;
+}
+
+.manga-cards.view-list .manga-details h3 {
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
+.manga-cards.view-list .badge-non-lu {
+  position: static;
+  margin-bottom: 0.5rem;
+}
+
+/* Dernière lecture sur la carte */
+.manga-details .last-read {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0.25rem 0;
+}
+
 @media (max-width: 700px) {
   body { padding: 1rem; }
   .filter-form { grid-template-columns: 1fr 1fr; }
   .manga-card { width: 100%; max-width: 320px; }
   h1 { font-size: 1.8rem; }
+  .toolbar { flex-direction: column; }
+  .manga-cards.view-list .manga-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .manga-cards.view-list .manga-card img {
+    width: 100%;
+    height: 200px;
+    margin: 0 auto;
+  }
+  .manga-cards.view-list .manga-details { justify-content: center; text-align: center; }
 }
