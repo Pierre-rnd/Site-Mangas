@@ -701,6 +701,36 @@ button:hover, .button:hover {
   margin: 0.25rem 0;
 }
 
+.copy-link-btn {
+  margin-left: 0.5rem !important;
+  width: auto !important;
+  min-width: auto !important;
+  padding: 0.35rem 0.5rem !important;
+  font-size: 1rem !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  vertical-align: middle;
+}
+
+.copy-link-btn:hover {
+  background: rgba(0, 183, 255, 0.2) !important;
+  border-color: var(--accent) !important;
+}
+
+.theme-btn {
+  width: 40px !important;
+  min-width: 40px !important;
+  margin: 0 !important;
+  padding: 0.4rem !important;
+  border-radius: 50% !important;
+  font-size: 1.1rem !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.theme-btn:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
 @media (max-width: 700px) {
   body { padding: 1rem; }
   .filter-form { grid-template-columns: 1fr 1fr; }
@@ -717,4 +747,61 @@ button:hover, .button:hover {
     margin: 0 auto;
   }
   .manga-cards.view-list .manga-details { justify-content: center; text-align: center; }
+}
+
+/* Thème clair */
+body.theme-light {
+  background: linear-gradient(135deg, #e8eef5, #d4dce8 60%, #c5d0e0);
+  color: #1a1f2e;
+}
+
+body.theme-light h1 {
+  background: linear-gradient(90deg, #0066aa, #4c00aa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.theme-light form,
+body.theme-light .manga-card,
+body.theme-light .empty-state,
+body.theme-light #stats-panel,
+body.theme-light .modal,
+body.theme-light .toast {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 100, 180, 0.35);
+  color: #1a1f2e;
+}
+
+body.theme-light .manga-details h3,
+body.theme-light .manga-details a,
+body.theme-light #stats-panel h2 {
+  color: #0066aa;
+}
+
+body.theme-light label,
+body.theme-light .results-count,
+body.theme-light .manga-details .last-read {
+  color: #2d3548;
+}
+
+body.theme-light input,
+body.theme-light select {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a1f2e;
+  border-color: rgba(0, 100, 180, 0.3);
+}
+
+body.theme-light .button-outline {
+  border-color: #0066aa !important;
+  color: #0066aa !important;
+}
+
+body.theme-light .button-outline:hover {
+  background: rgba(0, 102, 170, 0.12) !important;
+  color: #1a1f2e !important;
+}
+
+body.theme-light .modal-overlay,
+body.theme-light #stats-overlay {
+  background: rgba(0, 0, 0, 0.4);
 }

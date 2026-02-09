@@ -66,6 +66,7 @@ def index():
     filter_note = request.args.get('filter_note', '')
     filter_non_lu = request.args.get('non_lu', '') == '1'
     sort_by = request.args.get('sort', 'nom')
+    order = request.args.get('order', 'asc' if sort_by == 'nom' else 'desc')  # asc ou desc
 
     if filter_fini == 'oui':
         filter_fini_value = True
@@ -82,9 +83,10 @@ def index():
            (not filter_non_lu or manga.get('non_lu')):
             filtered_mangas.append(manga)
 
-    # Tri
+    # Tri (ordre asc/desc)
+    reverse = order == 'desc'
     if sort_by == 'note':
-        filtered_mangas.sort(key=lambda m: int(m.get('note', 0)), reverse=True)
+        filtered_mangas.sort(key=lambda m: int(m.get('note', 0)), reverse=reverse)
     elif sort_by == 'derniere_lecture':
         def _date_key(m):
             d = m.get('derniere_lecture')
@@ -94,13 +96,13 @@ def index():
                 return datetime.strptime(str(d), '%Y-%m-%d').date() if isinstance(d, str) else d
             except Exception:
                 return datetime.min.date()
-        filtered_mangas.sort(key=_date_key, reverse=True)
+        filtered_mangas.sort(key=_date_key, reverse=reverse)
     elif sort_by == 'chapitre':
-        filtered_mangas.sort(key=lambda m: int(m.get('chapitre', 0) or 0), reverse=True)
+        filtered_mangas.sort(key=lambda m: int(m.get('chapitre', 0) or 0), reverse=reverse)
     else:
-        filtered_mangas.sort(key=lambda m: m['nom'].lower())
+        filtered_mangas.sort(key=lambda m: m['nom'].lower(), reverse=reverse)
 
-    return render_template('index.html', mangas=filtered_mangas, sort=sort_by)
+    return render_template('index.html', mangas=filtered_mangas, sort=sort_by, order=order)
 
 
 
@@ -225,6 +227,8 @@ def stats():
         except Exception:
             pass
 
+    total_chapitres = sum(int(m.get('chapitre', 0) or 0) for m in mangas)
+
     if total > 0:
         moyenne = round(sum(int(m.get('note', 0)) for m in mangas) / total, 2)
         meilleur = max(mangas, key=lambda m: int(m.get('note', 0)))
@@ -240,6 +244,7 @@ def stats():
         "finis": finis,
         "en_cours": en_cours,
         "non_lu_7j": non_lu_count,
+        "total_chapitres": total_chapitres,
         "moyenne": moyenne,
         "meilleur_nom": meilleur_nom,
         "meilleur_note": meilleur_note

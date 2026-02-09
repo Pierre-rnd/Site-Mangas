@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestionnaire de Mangas</title>
+    <title>Gestionnaire de Mangas{% if mangas and mangas|length > 0 %} ({{ mangas|length }}){% endif %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script>
@@ -53,6 +53,17 @@
                 } else { alert('Erreur : impossible de supprimer le manga.'); }
             })
             .catch(function() { alert('Erreur : impossible de contacter le serveur.'); });
+    }
+    function copyReadLink(btn) {
+        var url = btn.getAttribute('data-url');
+        if (!url) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function() { showToast('Lien copié'); }).catch(function() { showToast('Échec de la copie', 'error'); });
+        } else {
+            var ta = document.createElement('textarea'); ta.value = url; ta.style.position = 'fixed'; document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); showToast('Lien copié'); } catch (e) { showToast('Échec de la copie', 'error'); }
+            document.body.removeChild(ta);
+        }
     }
 </script>
     <script>
@@ -125,6 +136,11 @@
             <option value="derniere_lecture" {% if request.args.get('sort') == 'derniere_lecture' %}selected{% endif %}>Dernière lecture</option>
             <option value="chapitre" {% if request.args.get('sort') == 'chapitre' %}selected{% endif %}>Chapitre (↑)</option>
         </select>
+        <label for="order">Ordre</label>
+        <select id="order" name="order" onchange="this.form.submit()">
+            <option value="asc" {% if request.args.get('order', order|default('asc')) == 'asc' %}selected{% endif %}>↑ Ascendant</option>
+            <option value="desc" {% if request.args.get('order') == 'desc' %}selected{% endif %}>↓ Descendant</option>
+        </select>
         <label class="filter-checkbox">
             <input type="checkbox" name="non_lu" value="1" {% if request.args.get('non_lu') == '1' %}checked{% endif %}>
             <span>Non lus 7j+</span>
@@ -142,6 +158,7 @@
             <button type="button" class="view-btn" data-view="list" title="Vue liste">≡</button>
         </div>
         <button type="button" id="help-btn" class="help-btn" title="Raccourcis et aide">?</button>
+        <button type="button" id="theme-btn" class="theme-btn" title="Thème clair / sombre">☀</button>
     </div>
     
     <form id="mangaForm" action="/ajouter" method="post" class="form-add-manga" style="display:none;">
@@ -207,7 +224,10 @@
                 <p>Saison : {{ manga.saison }}</p>
                 <p class="last-read" title="Dernière lecture">📅 {{ manga.last_read_label }}</p>
                 <p>Statut : <span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
-                <p><a href="{{ url_for('lire_manga', id=manga.id) }}" target="_blank" class="link-read">Lire le manga</a></p>
+                <p>
+                    <a href="{{ url_for('lire_manga', id=manga.id) }}" target="_blank" class="link-read">Lire le manga</a>
+                    <button type="button" class="copy-link-btn" data-url="{{ url_for('lire_manga', id=manga.id, _external=True) }}" onclick="copyReadLink(this)" title="Copier le lien">📋</button>
+                </p>
                 <p>Note: {% for i in range(1, 6) %}
                     {% if i <= manga.note %}
                         &#9733;
@@ -246,6 +266,8 @@
         <li><strong>⊞ / ≡</strong> Vue grille ou liste (préférence enregistrée)</li>
         <li><strong>Export</strong> Télécharge une sauvegarde JSON de ta liste</li>
         <li><strong>Non lus 7j+</strong> Filtre les mangas non lus depuis au moins 7 jours</li>
+        <li><strong>Ordre</strong> Ascendant / Descendant pour inverser le tri</li>
+        <li><strong>☀ / 🌙</strong> Thème clair ou sombre (préférence enregistrée)</li>
     </ul>
 </div>
 
@@ -259,6 +281,7 @@
             <p><strong>Mangas terminés :</strong> <span id="finis"></span></p>
             <p><strong>Mangas en cours :</strong> <span id="en_cours"></span></p>
             <p><strong>Non lus depuis 7+ jours :</strong> <span id="non_lu_7j"></span></p>
+            <p><strong>Total chapitres :</strong> <span id="total_chapitres"></span></p>
             <p><strong>Note moyenne :</strong> <span id="moyenne"></span></p>
             <p><strong>Meilleur manga :</strong> <span id="meilleur"></span></p>
         </div>
@@ -279,6 +302,7 @@
       document.getElementById('finis').textContent = data.finis ?? '0';
       document.getElementById('en_cours').textContent = data.en_cours ?? '0';
       document.getElementById('non_lu_7j').textContent = data.non_lu_7j ?? '0';
+      document.getElementById('total_chapitres').textContent = data.total_chapitres ?? '0';
       document.getElementById('moyenne').textContent = data.moyenne ?? '0';
       document.getElementById('meilleur').textContent = (data.meilleur_nom ? `${data.meilleur_nom} (${data.meilleur_note}★)` : '—');
       overlay.classList.add('show');
@@ -396,6 +420,23 @@
   });
 
   document.getElementById('delete-overlay').addEventListener('click', closeDeleteModal);
+
+  // Thème clair / sombre
+  var themeKey = 'manga-theme';
+  var themeBtn = document.getElementById('theme-btn');
+  function applyTheme(light) {
+    document.body.classList.toggle('theme-light', light);
+    themeBtn.textContent = light ? '🌙' : '☀';
+    themeBtn.title = light ? 'Passer au thème sombre' : 'Passer au thème clair';
+    try { localStorage.setItem(themeKey, light ? 'light' : 'dark'); } catch (e) {}
+  }
+  try {
+    var t = localStorage.getItem(themeKey);
+    applyTheme(t === 'light');
+  } catch (e) {}
+  themeBtn.addEventListener('click', function() {
+    applyTheme(!document.body.classList.contains('theme-light'));
+  });
 </script>
 
 
