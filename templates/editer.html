@@ -31,9 +31,10 @@
     </style>
 </head>
 <body>
-    <h1>Modifier un Manga</h1>
+    <a href="{{ url_for('index') }}" class="back-link">← Retour à la liste</a>
+    <h1>Modifier un manga</h1>
 
-    <form action="{{ url_for('modifier', id=manga.id) }}" method="post">
+    <form action="{{ url_for('modifier', id=manga.id) }}" method="post" class="form-edit">
         <label for="nom">Nom du Manga:</label>
         <input type="text" id="nom" name="nom" value="{{ manga.nom }}" required><br>
         
@@ -43,10 +44,10 @@
         <label for="saison">Saison actuelle:</label>
         <input type="text" id="saison" name="saison" value="{{ manga.saison }}" required><br>
         
-        <label for="fini">Est-ce que le manga est fini?</label>
+        <label for="fini">Est-ce que le manga est fini ?</label>
         <select id="fini" name="fini">
-            <option value="oui" {% if manga.fini == "oui" %}selected{% endif %}>Oui</option>
-            <option value="non" {% if manga.fini == "non" %}selected{% endif %}>Non</option>
+            <option value="oui" {% if manga.fini in (True, 'true', 'True', 'oui') %}selected{% endif %}>Oui</option>
+            <option value="non" {% if manga.fini not in (True, 'true', 'True', 'oui') %}selected{% endif %}>Non</option>
         </select><br>
 
         
@@ -70,7 +71,7 @@
         <label for="image">Lien de l'image:</label>
         <input type="url" id="image" name="image" value="{{ manga.image }}" required><br>
 
-        <button type="submit">Modifier Manga</button>
+        <button type="submit">Enregistrer les modifications</button>
     </form>
 </body>
 </html>

@@ -83,34 +83,42 @@
 <h1>Gestionnaire de Mangas</h1>
 
 <body>
-    <form method="GET" action="/">
-        <label for="search">Rechercher:</label>
-        <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}">
+    <form method="GET" action="/" class="filter-form">
+        <label for="search">Rechercher</label>
+        <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nom du manga...">
         
-        <label for="filter-fini">Fini:</label>
+        <label for="filter-fini">Statut</label>
         <select id="filter-fini" name="filter_fini">
             <option value="">Tous</option>
-            <option value="oui" {% if request.args.get('filter_fini') == 'oui' %}selected{% endif %}>Oui</option>
-            <option value="non" {% if request.args.get('filter_fini') == 'non' %}selected{% endif %}>Non</option>
+            <option value="oui" {% if request.args.get('filter_fini') == 'oui' %}selected{% endif %}>Terminés</option>
+            <option value="non" {% if request.args.get('filter_fini') == 'non' %}selected{% endif %}>En cours</option>
         </select>
         
-        <label for="filter-note">Note:</label>
+        <label for="filter-note">Note</label>
         <select id="filter-note" name="filter_note">
             <option value="">Toutes</option>
             {% for i in range(1, 6) %}
-            <option value="{{ i }}" {% if request.args.get('filter_note') == i|string %}selected{% endif %}>{{ i }} étoiles</option>
-
+            <option value="{{ i }}" {% if request.args.get('filter_note') == i|string %}selected{% endif %}>{{ i }} ★</option>
             {% endfor %}
+        </select>
+
+        <label for="sort">Trier par</label>
+        <select id="sort" name="sort" onchange="this.form.submit()">
+            <option value="nom" {% if request.args.get('sort', sort|default('nom')) == 'nom' %}selected{% endif %}>Nom (A→Z)</option>
+            <option value="note" {% if request.args.get('sort') == 'note' %}selected{% endif %}>Note (↑)</option>
+            <option value="derniere_lecture" {% if request.args.get('sort') == 'derniere_lecture' %}selected{% endif %}>Dernière lecture</option>
+            <option value="chapitre" {% if request.args.get('sort') == 'chapitre' %}selected{% endif %}>Chapitre (↑)</option>
         </select>
         
         <button type="submit">Filtrer</button>
-        <a href="/" class="button">Réinitialiser</a>
+        <a href="/" class="button button-outline">Réinitialiser</a>
     </form>
+    <p class="results-count">{{ mangas|length }} manga{{ 's' if mangas|length != 1 else '' }} affiché{{ 's' if mangas|length != 1 else '' }}</p>
     
     
-    <button onclick="toggleForm()">Ajouter un Manga</button>
+    <button onclick="toggleForm()" class="btn-add-toggle">+ Ajouter un manga</button>
     
-    <form id="mangaForm" action="/ajouter" method="post" style="display:none;">
+    <form id="mangaForm" action="/ajouter" method="post" class="form-add-manga" style="display:none;">
         <label for="nom">Nom du Manga:</label>
         <input type="text" id="nom" name="nom" required><br>
         
@@ -148,23 +156,31 @@
     </form>
     
     <div class="manga-cards">
+        {% if not mangas %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📚</div>
+            <h2>Aucun manga trouvé</h2>
+            <p>Modifiez les filtres ou ajoutez un nouveau manga pour commencer.</p>
+            <button onclick="toggleForm()" class="button">Ajouter un manga</button>
+        </div>
+        {% else %}
         {% for manga in mangas %}
-        <div class="manga-card">
+        <div class="manga-card" style="animation-delay: {{ loop.index0 * 0.06 }}s">
             {% if manga.non_lu %}
             <div class="badge-non-lu">Non lu depuis 1 semaine</div>
             {% endif %}
-            <img src="{{ manga.image }}" alt="{{ manga.nom }}">
+            <img src="{{ manga.image }}" alt="{{ manga.nom }}" loading="lazy" onerror="this.onerror=null; this.classList.add('img-fallback'); this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
             <div class="manga-details">
                 <h3>{{ manga.nom }}</h3>
-                <p>
-                    Chapitre:
-                    <ul><button class="chapter-btn" onclick="modifierChapitre('{{ manga.id }}', -1)">-</button>
+                <p class="chapter-row">Chapitre :</p>
+                <div class="chapter-controls">
+                    <button type="button" class="chapter-btn" onclick="modifierChapitre('{{ manga.id }}', -1)" aria-label="Diminuer le chapitre">−</button>
                     <span id="chapitre-{{ manga.id }}">{{ manga.chapitre }}</span>
-                    <button class="chapter-btn" onclick="modifierChapitre('{{ manga.id }}', 1)">+</button>
-                </p>
-                <p>Saison: {{ manga.saison }}</p>
-                <p>Statut: <span style="color: {{ 'green' if manga.fini else 'red' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
-                <p><a href="{{ url_for('lire_manga', id=manga.id) }}" target="_blank">Lire le manga</a></p>
+                    <button type="button" class="chapter-btn" onclick="modifierChapitre('{{ manga.id }}', 1)" aria-label="Augmenter le chapitre">+</button>
+                </div>
+                <p>Saison : {{ manga.saison }}</p>
+                <p>Statut : <span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
+                <p><a href="{{ url_for('lire_manga', id=manga.id) }}" target="_blank" class="link-read">Lire le manga</a></p>
                 <p>Note: {% for i in range(1, 6) %}
                     {% if i <= manga.note %}
                         &#9733;
@@ -177,6 +193,7 @@
             </div>
         </div>
         {% endfor %}
+        {% endif %}
     </div>
 
 <button id="stats-btn" title="Voir les statistiques">📊</button>

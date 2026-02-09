@@ -130,11 +130,21 @@ button:hover, .button:hover {
   box-shadow: 0 0 15px var(--accent);
 }
 
-button[onclick="toggleForm()"] {
+.btn-add-toggle {
   display: block;
-  width: 250px; 
-  margin: 1rem auto;
+  width: 260px;
+  margin: 1rem auto 1.5rem;
+  font-size: 1rem;
 }
+
+.form-add-manga {
+  margin-bottom: 2rem !important;
+  flex-direction: column;
+}
+
+.form-add-manga .stars { margin-top: 0.4rem; }
+.form-add-manga label { margin-top: 0.6rem; }
+.form-add-manga label:first-of-type { margin-top: 0; }
 
 
 .manga-cards {
@@ -168,6 +178,11 @@ button[onclick="toggleForm()"] {
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.manga-card img.img-fallback {
+  background: linear-gradient(135deg, rgba(30, 35, 50, 0.95), rgba(20, 22, 35, 0.95));
+  object-fit: none;
+}
+
 .manga-details {
   padding: 1rem;
   text-align: center;
@@ -186,6 +201,23 @@ button[onclick="toggleForm()"] {
 
 .manga-details a:hover {
   text-decoration: underline;
+}
+
+.manga-details .link-read {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.45rem 1rem;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  color: white !important;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.manga-details .link-read:hover {
+  box-shadow: 0 0 15px rgba(0, 183, 255, 0.5);
+  transform: translateY(-1px);
 }
 
 .badge-non-lu {
@@ -290,3 +322,140 @@ button[onclick="toggleForm()"] {
 }
 #stats-overlay.show #stats-panel { animation: panelIn 180ms ease-out forwards; }
 #stats-overlay.show { display: flex; }
+
+/* Compteur de résultats */
+.results-count {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
+  margin: -1rem 0 1.5rem 0;
+  font-weight: 500;
+}
+
+/* État vide */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 1.5rem;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.8;
+}
+
+.empty-state h2 {
+  color: var(--text-color);
+  font-size: 1.4rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.empty-state p {
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+/* Bouton outline (réinitialiser) */
+.button-outline {
+  background: transparent !important;
+  border: 2px solid var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+.button-outline:hover {
+  background: rgba(0, 183, 255, 0.15) !important;
+  color: var(--text-color) !important;
+}
+
+/* Boutons chapitre +/- */
+.chapter-btn {
+  width: auto !important;
+  min-width: 38px !important;
+  margin: 0 4px !important;
+  padding: 0.4rem 0.6rem !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+}
+
+.chapter-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chapter-controls span {
+  min-width: 2ch;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.manga-details .chapter-row {
+  margin-bottom: 0.25rem;
+}
+
+/* Bouton supprimer */
+.delete-btn {
+  background: linear-gradient(90deg, #c0392b, #e74c3c) !important;
+  font-size: 0.9rem !important;
+  margin-top: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  width: auto !important;
+  min-width: auto !important;
+}
+
+.delete-btn:hover {
+  box-shadow: 0 0 12px rgba(231, 76, 60, 0.5) !important;
+}
+
+/* Statut terminé / en cours */
+.status-termine { color: #2ecc71 !important; }
+.status-cours { color: #e74c3c !important; }
+
+/* Formulaire filtre plus compact sur desktop */
+.filter-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.filter-form label { margin-top: 0; }
+
+/* Page éditer */
+.back-link {
+  display: inline-block;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+.form-edit {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.form-edit label { margin-top: 0.6rem; }
+.form-edit .stars { margin-top: 0.4rem; }
+
+@media (max-width: 700px) {
+  body { padding: 1rem; }
+  .filter-form { grid-template-columns: 1fr 1fr; }
+  .manga-card { width: 100%; max-width: 320px; }
+  h1 { font-size: 1.8rem; }
+}

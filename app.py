@@ -56,6 +56,7 @@ def index():
     search = request.args.get('search', '').lower()
     filter_fini = request.args.get('filter_fini', '')
     filter_note = request.args.get('filter_note', '')
+    sort_by = request.args.get('sort', 'nom')  # nom, note, derniere_lecture, chapitre
 
     if filter_fini == 'oui':
         filter_fini_value = True
@@ -68,10 +69,28 @@ def index():
     for manga in mangas:
         if (search in manga['nom'].lower() or search == '') and \
            (filter_fini_value is None or manga['fini'] == filter_fini_value) and \
-           (filter_note == '' or manga['note'] == int(filter_note)):
+           (filter_note == '' or (filter_note and manga['note'] == int(filter_note))):
             filtered_mangas.append(manga)
 
-    return render_template('index.html', mangas=filtered_mangas)
+    # Tri
+    if sort_by == 'note':
+        filtered_mangas.sort(key=lambda m: int(m.get('note', 0)), reverse=True)
+    elif sort_by == 'derniere_lecture':
+        def _date_key(m):
+            d = m.get('derniere_lecture')
+            if d is None:
+                return datetime.min.date()
+            try:
+                return datetime.strptime(str(d), '%Y-%m-%d').date() if isinstance(d, str) else d
+            except Exception:
+                return datetime.min.date()
+        filtered_mangas.sort(key=_date_key, reverse=True)
+    elif sort_by == 'chapitre':
+        filtered_mangas.sort(key=lambda m: int(m.get('chapitre', 0) or 0), reverse=True)
+    else:
+        filtered_mangas.sort(key=lambda m: m['nom'].lower())
+
+    return render_template('index.html', mangas=filtered_mangas, sort=sort_by)
 
 
 
