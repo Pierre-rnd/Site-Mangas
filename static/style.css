@@ -690,51 +690,12 @@ body.theme-light .filter-tag:hover {
   margin-right: 0.5rem;
 }
 
-/* Vue liste */
+/* Vue liste : même format que la grille, cartes en colonne */
 .manga-cards.view-list {
   flex-direction: column;
-  align-items: stretch;
-  max-width: 900px;
+  align-items: center;
+  max-width: 800px;
   margin: 0 auto;
-}
-
-.manga-cards.view-list .manga-card {
-  width: 100%;
-  max-width: none;
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 1.5rem;
-  align-items: center;
-  text-align: left;
-}
-
-.manga-cards.view-list .manga-card img {
-  width: 120px;
-  height: 160px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.manga-cards.view-list .manga-details {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
-  text-align: left;
-}
-
-.manga-cards.view-list .manga-details p {
-  margin: 0;
-}
-
-.manga-cards.view-list .manga-details h3 {
-  width: 100%;
-  margin-bottom: 0.25rem;
-}
-
-.manga-cards.view-list .badge-non-lu {
-  position: static;
-  margin-bottom: 0.5rem;
 }
 
 /* Dernière lecture sur la carte */
@@ -780,16 +741,6 @@ body.theme-light .filter-tag:hover {
   .manga-card { width: 100%; max-width: 320px; }
   h1 { font-size: 1.8rem; }
   .toolbar { flex-direction: column; }
-  .manga-cards.view-list .manga-card {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-  .manga-cards.view-list .manga-card img {
-    width: 100%;
-    height: 200px;
-    margin: 0 auto;
-  }
-  .manga-cards.view-list .manga-details { justify-content: center; text-align: center; }
 }
 
 /* Thème clair */

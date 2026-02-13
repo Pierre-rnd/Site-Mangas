@@ -282,7 +282,6 @@
         <li><kbd>Échap</kbd> Fermer le panneau stats ou le formulaire</li>
         <li><strong>⊞ / ≡</strong> Vue grille ou liste (préférence enregistrée)</li>
         <li><strong>JSON / CSV</strong> Télécharge une sauvegarde de ta liste</li>
-        <li><strong>Recherche</strong> La recherche se met à jour automatiquement en tapant</li>
         <li><strong>Filtres actifs</strong> Clique sur un tag × pour retirer ce filtre</li>
         <li><strong>Non lus 7j+</strong> Filtre les mangas non lus depuis au moins 7 jours</li>
         <li><strong>Ordre</strong> Ascendant / Descendant pour inverser le tri</li>
@@ -423,19 +422,6 @@
       applyView(btn.getAttribute('data-view'));
     });
   });
-
-  // Recherche instantanée (debounce 400 ms)
-  (function() {
-    var searchInput = document.getElementById('search');
-    var filterForm = document.querySelector('.filter-form');
-    var searchTimeout;
-    if (searchInput && filterForm) {
-      searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(function() { filterForm.submit(); }, 400);
-      });
-    }
-  })();
 
   // Modal aide
   document.getElementById('help-btn').addEventListener('click', function() {
