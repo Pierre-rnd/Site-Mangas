@@ -8,14 +8,11 @@
     <script>
         function toggleForm() {
             var overlay = document.getElementById('add-overlay');
-            var modal = document.getElementById('add-modal');
             if (overlay.classList.contains('show')) {
                 overlay.classList.remove('show');
-                modal.classList.remove('show');
                 document.getElementById('mangaForm').reset();
             } else {
                 overlay.classList.add('show');
-                modal.classList.add('show');
             }
         }
     </script>
@@ -36,12 +33,10 @@
     var deleteModalId = null;
     function supprimerManga(id) {
         deleteModalId = id;
-        document.getElementById('delete-modal').classList.add('show');
         document.getElementById('delete-overlay').classList.add('show');
     }
     function closeDeleteModal() {
         deleteModalId = null;
-        document.getElementById('delete-modal').classList.remove('show');
         document.getElementById('delete-overlay').classList.remove('show');
     }
     function confirmDelete() {
@@ -181,64 +176,6 @@
         <button type="button" id="theme-btn" class="theme-btn" title="Thème clair / sombre">☀</button>
     </div>
     
-    <!-- Modal Ajouter un manga -->
-    <div id="add-overlay" class="modal-overlay add-overlay" aria-hidden="true"></div>
-    <div id="add-modal" class="modal add-manga-modal">
-        <span class="modal-close add-close" onclick="toggleForm()" title="Fermer">&times;</span>
-        <div class="add-manga-header">
-            <span class="add-manga-icon">📖</span>
-            <h2>Ajouter un manga</h2>
-            <p>Remplis les informations de ton nouveau manga</p>
-        </div>
-        <form id="mangaForm" action="/ajouter" method="post" class="form-add-manga">
-            <div class="form-add-grid">
-                <div class="form-add-col">
-                    <label for="nom"><i class="fas fa-book"></i> Nom du manga</label>
-                    <input type="text" id="nom" name="nom" placeholder="Ex: One Piece" required>
-                    
-                    <label for="chapitre"><i class="fas fa-file"></i> Chapitre actuel</label>
-                    <input type="text" id="chapitre" name="chapitre" placeholder="Ex: 1050" required>
-                    
-                    <label for="saison"><i class="fas fa-layer-group"></i> Saison actuelle</label>
-                    <input type="text" id="saison" name="saison" placeholder="Ex: 1" required>
-                    
-                    <label for="fini"><i class="fas fa-check-circle"></i> Statut</label>
-                    <select id="fini" name="fini">
-                        <option value="non">En cours</option>
-                        <option value="oui">Terminé</option>
-                    </select>
-                </div>
-                <div class="form-add-col">
-                    <label for="lien"><i class="fas fa-link"></i> Lien de lecture</label>
-                    <input type="url" id="lien" name="lien" placeholder="https://..." required>
-                    
-                    <label for="image"><i class="fas fa-image"></i> Lien de la couverture</label>
-                    <input type="url" id="image" name="image" placeholder="https://..." required>
-                    
-                    <label><i class="fas fa-star"></i> Note</label>
-                    <div class="stars stars-add">
-                        <input type="radio" id="star5" name="note" value="5" />
-                        <label for="star5"><i class="fas fa-star"></i></label>
-                        <input type="radio" id="star4" name="note" value="4" />
-                        <label for="star4"><i class="fas fa-star"></i></label>
-                        <input type="radio" id="star3" name="note" value="3" />
-                        <label for="star3"><i class="fas fa-star"></i></label>
-                        <input type="radio" id="star2" name="note" value="2" />
-                        <label for="star2"><i class="fas fa-star"></i></label>
-                        <input type="radio" id="star1" name="note" value="1" />
-                        <label for="star1"><i class="fas fa-star"></i></label>
-                    </div>
-                </div>
-            </div>
-            <div class="form-add-actions">
-                <button type="button" class="button button-outline" onclick="toggleForm()">Annuler</button>
-                <button type="submit" class="button btn-submit-add">
-                    <i class="fas fa-plus"></i> Ajouter le manga
-                </button>
-            </div>
-        </form>
-    </div>
-    
     <div class="manga-cards" id="manga-cards">
         {% if not mangas %}
         <div class="empty-state">
@@ -285,7 +222,7 @@
     </div>
 
 <!-- Modal confirmation suppression -->
-<div id="delete-overlay" class="modal-overlay" aria-hidden="true"></div>
+<div id="delete-overlay" class="modal-overlay" aria-hidden="true">
 <div id="delete-modal" class="modal confirm-modal">
     <h3>Supprimer ce manga ?</h3>
     <p>Cette action est irréversible.</p>
@@ -294,9 +231,10 @@
         <button type="button" class="button delete-btn" onclick="confirmDelete()">Supprimer</button>
     </div>
 </div>
+</div>
 
 <!-- Modal aide / raccourcis -->
-<div id="help-overlay" class="modal-overlay" aria-hidden="true"></div>
+<div id="help-overlay" class="modal-overlay" aria-hidden="true">
 <div id="help-modal" class="modal help-modal">
     <span class="modal-close" id="close-help">&times;</span>
     <h3>Raccourcis & aide</h3>
@@ -311,6 +249,66 @@
         <li><strong>Ordre</strong> Ascendant / Descendant pour inverser le tri</li>
         <li><strong>☀ / 🌙</strong> Thème clair ou sombre (préférence enregistrée)</li>
     </ul>
+</div>
+</div>
+
+<!-- Modal Ajouter un manga -->
+<div id="add-overlay" class="modal-overlay" aria-hidden="true">
+<div id="add-modal" class="modal add-manga-modal">
+    <span class="modal-close add-close" onclick="toggleForm()" title="Fermer">&times;</span>
+    <div class="add-manga-header">
+        <span class="add-manga-icon">📖</span>
+        <h2>Ajouter un manga</h2>
+        <p>Remplis les informations de ton nouveau manga</p>
+    </div>
+    <form id="mangaForm" action="/ajouter" method="post" class="form-add-manga">
+        <div class="form-add-grid">
+            <div class="form-add-col">
+                <label for="nom"><i class="fas fa-book"></i> Nom du manga</label>
+                <input type="text" id="nom" name="nom" placeholder="Ex: One Piece" required>
+                
+                <label for="chapitre"><i class="fas fa-file"></i> Chapitre actuel</label>
+                <input type="text" id="chapitre" name="chapitre" placeholder="Ex: 1050" required>
+                
+                <label for="saison"><i class="fas fa-layer-group"></i> Saison actuelle</label>
+                <input type="text" id="saison" name="saison" placeholder="Ex: 1" required>
+                
+                <label for="fini"><i class="fas fa-check-circle"></i> Statut</label>
+                <select id="fini" name="fini">
+                    <option value="non">En cours</option>
+                    <option value="oui">Terminé</option>
+                </select>
+            </div>
+            <div class="form-add-col">
+                <label for="lien"><i class="fas fa-link"></i> Lien de lecture</label>
+                <input type="url" id="lien" name="lien" placeholder="https://..." required>
+                
+                <label for="image"><i class="fas fa-image"></i> Lien de la couverture</label>
+                <input type="url" id="image" name="image" placeholder="https://..." required>
+                
+                <label><i class="fas fa-star"></i> Note</label>
+                <div class="stars stars-add">
+                    <input type="radio" id="star5" name="note" value="5" />
+                    <label for="star5"><i class="fas fa-star"></i></label>
+                    <input type="radio" id="star4" name="note" value="4" />
+                    <label for="star4"><i class="fas fa-star"></i></label>
+                    <input type="radio" id="star3" name="note" value="3" />
+                    <label for="star3"><i class="fas fa-star"></i></label>
+                    <input type="radio" id="star2" name="note" value="2" />
+                    <label for="star2"><i class="fas fa-star"></i></label>
+                    <input type="radio" id="star1" name="note" value="1" />
+                    <label for="star1"><i class="fas fa-star"></i></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-add-actions">
+            <button type="button" class="button button-outline" onclick="toggleForm()">Annuler</button>
+            <button type="submit" class="button btn-submit-add">
+                <i class="fas fa-plus"></i> Ajouter le manga
+            </button>
+        </div>
+    </form>
+</div>
 </div>
 
 <button id="stats-btn" title="Voir les statistiques">📊</button>
@@ -374,13 +372,12 @@
       toggleForm();
       return;
     }
-    if (document.getElementById('delete-modal').classList.contains('show')) {
+    if (document.getElementById('delete-overlay').classList.contains('show')) {
       closeDeleteModal();
       return;
     }
-    if (document.getElementById('help-modal').classList.contains('show')) {
+    if (document.getElementById('help-overlay').classList.contains('show')) {
       document.getElementById('help-overlay').classList.remove('show');
-      document.getElementById('help-modal').classList.remove('show');
       return;
     }
     if (overlay.classList.contains('show')) {
@@ -453,19 +450,22 @@
   // Modal aide
   document.getElementById('help-btn').addEventListener('click', function() {
     document.getElementById('help-overlay').classList.add('show');
-    document.getElementById('help-modal').classList.add('show');
   });
   document.getElementById('close-help').addEventListener('click', function() {
     document.getElementById('help-overlay').classList.remove('show');
-    document.getElementById('help-modal').classList.remove('show');
   });
-  document.getElementById('help-overlay').addEventListener('click', function() {
-    document.getElementById('help-overlay').classList.remove('show');
-    document.getElementById('help-modal').classList.remove('show');
+  document.getElementById('help-overlay').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('help-overlay')) {
+      document.getElementById('help-overlay').classList.remove('show');
+    }
   });
 
-  document.getElementById('delete-overlay').addEventListener('click', closeDeleteModal);
-  document.getElementById('add-overlay').addEventListener('click', toggleForm);
+  document.getElementById('delete-overlay').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('delete-overlay')) closeDeleteModal();
+  });
+  document.getElementById('add-overlay').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('add-overlay')) toggleForm();
+  });
 
   // Thème clair / sombre
   var themeKey = 'manga-theme';
