@@ -139,7 +139,7 @@ button:hover, .button:hover {
 
 /* Modal Ajouter un manga */
 .add-manga-modal {
-  width: 560px;
+  width: 680px;
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
@@ -163,7 +163,8 @@ button:hover, .button:hover {
   filter: drop-shadow(0 0 10px rgba(0, 183, 255, 0.3));
 }
 
-.add-manga-header h2 {
+.add-manga-header h2,
+.edit-manga-card .add-manga-header h2 {
   margin: 0 0 0.25rem 0;
   font-size: 1.4rem;
   color: var(--accent);
@@ -216,6 +217,30 @@ button:hover, .button:hover {
 
 .form-add-manga .stars-add {
   margin: 0.25rem 0 0 0;
+  pointer-events: auto;
+}
+
+.form-add-manga .stars-add label {
+  display: inline-block;
+  cursor: pointer;
+  padding: 0.25rem;
+  margin: 0 !important;
+  font-size: 1.5em;
+}
+
+.form-add-manga .stars-add input[type="radio"] {
+  display: none;
+}
+
+.form-add-manga .stars-add input:checked ~ label,
+.form-add-manga .stars-add label:hover,
+.form-add-manga .stars-add label:hover ~ label {
+  color: #f5b301 !important;
+}
+
+.form-add-manga .stars-add label i {
+  width: auto;
+  color: inherit;
 }
 
 .form-add-actions {
@@ -602,6 +627,32 @@ body.theme-light .filter-tag:hover {
 .form-edit label { margin-top: 0.6rem; }
 .form-edit .stars { margin-top: 0.4rem; }
 
+/* Page Modifier - même style que le modal d'ajout */
+.edit-manga-card {
+  max-width: 680px;
+  margin: 1rem auto 2rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glow);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 0 25px rgba(0, 183, 255, 0.15);
+}
+
+.edit-manga-card .add-manga-header {
+  border-radius: 0;
+}
+
+.form-edit-manga {
+  padding: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .edit-manga-card {
+    margin: 1rem;
+  }
+}
+
 /* Toasts */
 .toast-container {
   position: fixed;
@@ -917,6 +968,7 @@ body.theme-light h1 {
 body.theme-light form,
 body.theme-light .manga-card,
 body.theme-light .empty-state,
+body.theme-light .edit-manga-card,
 body.theme-light #stats-panel,
 body.theme-light .modal,
 body.theme-light .toast {
