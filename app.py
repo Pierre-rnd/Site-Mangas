@@ -4,7 +4,9 @@ import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime, timedelta
-
+from flask_bcrypt import Bcrypt
+from flask import session
+bcrypt = Bcrypt(app)
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -18,24 +20,76 @@ def get_db_connection():
 app = Flask(__name__)
 
 
-def charger_mangas():
+def charger_mangas(user_id):
     conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-
-    cur.execute("SELECT * FROM mangas")
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM mangas WHERE user_id = %s", (user_id,))
     mangas = cur.fetchall()
-
     cur.close()
     conn.close()
-
     return mangas
 
 def sauvegarder_mangas(mangas):
     with open('mangas.json', 'w', encoding='utf-8') as f:
         json.dump(mangas, f, ensure_ascii=False, indent=4)
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+
+        password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
+                        (username, email, password_hash))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            return f"Erreur: {e}"
+        finally:
+            cur.close()
+            conn.close()
+
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
+
+from flask import session
+
+app.secret_key = os.getenv('SECRET_KEY', 'une_clef_secrete')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if user and bcrypt.check_password_hash(user[3], password):  # index 3 = password_hash
+            session['user_id'] = user[0]
+            session['username'] = user[1]
+            return redirect(url_for('index'))
+        else:
+            return "Nom d'utilisateur ou mot de passe incorrect"
+
+    return render_template('login.html')
+
 @app.route('/')
 def index():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     mangas = charger_mangas()
     
     for manga in mangas:
@@ -120,9 +174,9 @@ def ajouter():
     image = request.form['image']
 
     cur.execute('''
-        INSERT INTO mangas (nom, chapitre, saison, fini, lien, note, image)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-    ''', (nom, chapitre, saison, fini, lien, note, image))
+        INSERT INTO mangas (nom, chapitre, saison, fini, lien, note, image, user_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    ''', (nom, chapitre, saison, fini, lien, note, image, session['user_id']))
 
     conn.commit()
     conn.close()
@@ -314,6 +368,10 @@ def export_csv():
         headers={'Content-Disposition': 'attachment; filename=mangas-sauvegarde.csv'}
     )
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000)) 
