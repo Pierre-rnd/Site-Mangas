@@ -6,7 +6,6 @@ from psycopg2.extras import RealDictCursor
 from datetime import datetime, timedelta
 from flask_bcrypt import Bcrypt
 from flask import session
-bcrypt = Bcrypt(app)
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -32,6 +31,8 @@ def charger_mangas(user_id):
 def sauvegarder_mangas(mangas):
     with open('mangas.json', 'w', encoding='utf-8') as f:
         json.dump(mangas, f, ensure_ascii=False, indent=4)
+
+bcrypt = Bcrypt(app)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
