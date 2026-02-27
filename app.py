@@ -8,10 +8,10 @@ from datetime import datetime, timedelta
 
 def get_db_connection():
     conn = psycopg2.connect(
-        host=os.getenv('DB_HOST', 'dpg-d020pojuibrs73b8savg-a'),  
-        database=os.getenv('DB_NAME', 'mangas_0ps5'),
-        user=os.getenv('DB_USER', 'mangas_0ps5_user'),
-        password=os.getenv('DB_PASSWORD', 'jV4ofeNqdzvQX1HroOxjaevprGyO5y77')
+        host=os.getenv('DB_HOST'),  
+        database=os.getenv('DB_NAME'),
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASSWORD')
     )
     return conn
 
@@ -112,11 +112,11 @@ def ajouter():
     cur = conn.cursor()
 
     nom = request.form['nom']
-    chapitre = request.form['chapitre']
-    saison = request.form['saison']
+    chapitre = request.form.get('chapitre', 0)
+    saison = request.form.get('saison', 0)
     fini = request.form['fini'] == 'oui'
     lien = request.form['lien']
-    note = int(request.form['note'])
+    note = int(request.form.get('note', 0))
     image = request.form['image']
 
     cur.execute('''
@@ -136,11 +136,11 @@ def modifier(id):
     cur = conn.cursor()
 
     nom = request.form['nom']
-    chapitre = request.form['chapitre']
-    saison = request.form['saison']
+    chapitre = request.form.get('chapitre', 0)
+    saison = request.form.get('saison', 0)
     fini = request.form['fini'] == 'oui'
     lien = request.form['lien']
-    note = int(request.form['note'])
+    note = int(request.form.get('note', 0))
     image = request.form['image']
 
     cur.execute('''
@@ -186,7 +186,7 @@ def modifier_chapitre(id):
 
     nouveau_chapitre = max(1, int(manga['chapitre']) + changement)
 
-    cur.execute("UPDATE mangas SET chapitre = %s WHERE id = %s", (nouveau_chapitre, id))
+    cur.execute("UPDATE mangas SET chapitre = %s, derniere_lecture = %s WHERE id = %s", (nouveau_chapitre, id))
     conn.commit()
 
     cur.close()
