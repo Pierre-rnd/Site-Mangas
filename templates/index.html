@@ -113,6 +113,17 @@
 <h1>Gestionnaire de Mangas</h1>
 
 <body>
+    <div class="header">
+    <h1>Gestionnaire de Mangas</h1>
+    {% if session.username %}
+    <div class="user-info">
+        <span>Connecté en tant que {{ session.username }}</span>
+        <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
+            <button type="submit" class="btn-logout">Déconnexion</button>
+        </form>
+    </div>
+    {% endif %}
+    </div>
     <div id="toast-container" class="toast-container" aria-live="polite"></div>
     <form method="GET" action="/" class="filter-form">
         <label for="search">Rechercher</label>

@@ -129,7 +129,41 @@ button:hover, .button:hover {
   background: linear-gradient(90deg, var(--accent2), var(--accent));
   box-shadow: 0 0 15px var(--accent);
 }
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #222;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
 
+.header h1 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-logout {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.btn-logout:hover {
+    background-color: #d32f2f;
+}
 .btn-add-toggle {
   display: block;
   width: 260px;
