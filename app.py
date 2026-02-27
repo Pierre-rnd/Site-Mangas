@@ -1,11 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
-import os
-import json
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Response, session
+import os, json
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask_bcrypt import Bcrypt
-from flask import session
+
+app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'une_clef_secrete')
+bcrypt = Bcrypt(app)
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -15,24 +17,6 @@ def get_db_connection():
         password=os.getenv('DB_PASSWORD')
     )
     return conn
-
-app = Flask(__name__)
-
-
-def charger_mangas(user_id):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM mangas WHERE user_id = %s", (user_id,))
-    mangas = cur.fetchall()
-    cur.close()
-    conn.close()
-    return mangas
-
-def sauvegarder_mangas(mangas):
-    with open('mangas.json', 'w', encoding='utf-8') as f:
-        json.dump(mangas, f, ensure_ascii=False, indent=4)
-
-bcrypt = Bcrypt(app)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -57,12 +41,7 @@ def register():
             conn.close()
 
         return redirect(url_for('login'))
-
     return render_template('register.html')
-
-from flask import session
-
-app.secret_key = os.getenv('SECRET_KEY', 'une_clef_secrete')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -71,28 +50,42 @@ def login():
         password = request.form['password']
 
         conn = get_db_connection()
-        cur = conn.cursor()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
         cur.execute("SELECT * FROM users WHERE username = %s", (username,))
         user = cur.fetchone()
         cur.close()
         conn.close()
 
-        if user and bcrypt.check_password_hash(user[3], password):  # index 3 = password_hash
-            session['user_id'] = user[0]
-            session['username'] = user[1]
+        if user and bcrypt.check_password_hash(user['password_hash'], password):
+            session['user_id'] = user['id']
+            session['username'] = user['username']
             return redirect(url_for('index'))
         else:
             return "Nom d'utilisateur ou mot de passe incorrect"
-
     return render_template('login.html')
+
+def charger_mangas(user_id):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT * FROM mangas WHERE user_id = %s", (user_id,))
+    mangas = cur.fetchall()
+    cur.close()
+    conn.close()
+    return mangas
+
+def sauvegarder_mangas(mangas):
+    with open('mangas.json', 'w', encoding='utf-8') as f:
+        json.dump(mangas, f, ensure_ascii=False, indent=4)
+
+bcrypt = Bcrypt(app)
 
 @app.route('/')
 def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    mangas = charger_mangas()
-    
+    mangas = charger_mangas(session['user_id'])
+        
     for manga in mangas:
         manga['fini'] = str(manga['fini']).lower() == 'true'
 
@@ -121,7 +114,7 @@ def index():
     filter_note = request.args.get('filter_note', '')
     filter_non_lu = request.args.get('non_lu', '') == '1'
     sort_by = request.args.get('sort', 'nom')
-    order = request.args.get('order', 'asc' if sort_by == 'nom' else 'desc')  # asc ou desc
+    order = request.args.get('order', 'asc' if sort_by == 'nom' else 'desc') 
 
     if filter_fini == 'oui':
         filter_fini_value = True
@@ -138,7 +131,6 @@ def index():
            (not filter_non_lu or manga.get('non_lu')):
             filtered_mangas.append(manga)
 
-    # Tri (ordre asc/desc)
     reverse = order == 'desc'
     if sort_by == 'note':
         filtered_mangas.sort(key=lambda m: int(m.get('note', 0)), reverse=reverse)
