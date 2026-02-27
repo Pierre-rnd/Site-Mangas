@@ -133,7 +133,7 @@ button:hover, .button:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
+    padding: 20px;
     background-color: #222;
     color: white;
     position: sticky;
@@ -153,12 +153,12 @@ button:hover, .button:hover {
 }
 
 .btn-logout {
-    background-color: #f44336;
+    padding: 8px 16px;
+    background: linear-gradient(90deg, #00bfff, #8a2be2);
     color: white;
     border: none;
-    padding: 5px 10px;
+    border-radius: 5px;
     cursor: pointer;
-    border-radius: 4px;
 }
 
 .btn-logout:hover {
