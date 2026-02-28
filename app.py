@@ -152,6 +152,8 @@ def index():
 
 @app.route('/ajouter', methods=['POST'])
 def ajouter():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('''
@@ -188,8 +190,8 @@ def modifier(id):
     cur.execute('''
         UPDATE mangas
         SET nom = %s, chapitre = %s, saison = %s, fini = %s, lien = %s, note = %s, image = %s
-        WHERE id = %s
-    ''', (nom, chapitre, saison, fini, lien, note, image, id))
+        WHERE id = %s AND user_id = %s
+    ''', (nom, chapitre, saison, fini, lien, note, image, id, session['user_id']))
 
     conn.commit()
     conn.close()
@@ -202,7 +204,10 @@ def editer(id):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    cur.execute('SELECT * FROM mangas WHERE id = %s', (id,))
+    cur.execute(
+    'SELECT * FROM mangas WHERE id = %s AND user_id = %s',
+    (id, session['user_id'])
+    )
     manga = cur.fetchone()
 
     cur.close()
@@ -215,22 +220,33 @@ def editer(id):
 
 @app.route('/modifier_chapitre/<int:id>', methods=['POST'])
 def modifier_chapitre(id):
+    if 'user_id' not in session:
+        return jsonify({"erreur": "Non autorisé"}), 403
+
     changement = request.json['change']
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    cur.execute("SELECT chapitre FROM mangas WHERE id = %s", (id,))
+    cur.execute(
+        "SELECT chapitre FROM mangas WHERE id = %s AND user_id = %s",
+        (id, session['user_id'])
+    )
     manga = cur.fetchone()
 
     if not manga:
+        cur.close()
+        conn.close()
         return jsonify({"erreur": "Manga introuvable"}), 404
 
     nouveau_chapitre = max(1, int(manga['chapitre']) + changement)
 
-    cur.execute("UPDATE mangas SET chapitre = %s, derniere_lecture = %s WHERE id = %s", (nouveau_chapitre, id))
-    conn.commit()
+    cur.execute(
+        "UPDATE mangas SET chapitre = %s, derniere_lecture = %s WHERE id = %s AND user_id = %s",
+        (nouveau_chapitre, datetime.now().date(), id, session['user_id'])
+    )
 
+    conn.commit()
     cur.close()
     conn.close()
 
@@ -241,7 +257,10 @@ def supprimer(id):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    cur.execute('DELETE FROM mangas WHERE id = %s', (id,))
+    cur.execute(
+    'DELETE FROM mangas WHERE id = %s AND user_id = %s',
+    (id, session['user_id'])
+    )
     conn.commit()
     conn.close()
 
@@ -298,7 +317,10 @@ def lire_manga(id):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    cur.execute("SELECT lien FROM mangas WHERE id = %s", (id,))
+    cur.execute(
+    "SELECT lien FROM mangas WHERE id = %s AND user_id = %s",
+    (id, session['user_id'])
+    )
     manga = cur.fetchone()
 
     if not manga:
@@ -306,7 +328,10 @@ def lire_manga(id):
         conn.close()
         return "Manga introuvable", 404
 
-    cur.execute("UPDATE mangas SET derniere_lecture = %s WHERE id = %s", (datetime.now().date(), id))
+    cur.execute(
+    "UPDATE mangas SET derniere_lecture = %s WHERE id = %s AND user_id = %s",
+    (datetime.now().date(), id, session['user_id'])
+    )
     conn.commit()
 
     cur.close()
@@ -318,7 +343,7 @@ def lire_manga(id):
 @app.route('/export')
 def export_json():
     """Exporte la liste complète des mangas en JSON (sauvegarde)."""
-    mangas = charger_mangas()
+    mangas = charger_mangas(session['user_id'])
     out = []
     for m in mangas:
         row = dict(m)
@@ -338,9 +363,9 @@ def export_csv():
     """Exporte la liste des mangas en CSV."""
     import csv
     from io import StringIO
-    mangas = charger_mangas()
+    mangas = charger_mangas(session['user_id'])
     output = StringIO()
-    output.write('\ufeff')  # BOM UTF-8 pour Excel
+    output.write('\ufeff')
     writer = csv.writer(output)
     writer.writerow(['id', 'nom', 'chapitre', 'saison', 'fini', 'lien', 'note', 'image', 'derniere_lecture'])
     for m in mangas:
