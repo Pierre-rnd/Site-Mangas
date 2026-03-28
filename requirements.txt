@@ -1,3 +1,4 @@
 Flask
 psycopg2-binary
 Flask-Bcrypt==1.0.1
+cloudinary
