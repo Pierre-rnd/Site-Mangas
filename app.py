@@ -4,65 +4,32 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 from flask_bcrypt import Bcrypt
+import cloudinary
+import cloudinary.uploader
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'une_clef_secrete')
 bcrypt = Bcrypt(app)
 
+# ── Cloudinary config ──────────────────────────────────────────────────────────
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET'),
+    secure=True
+)
+
+# ── DB ─────────────────────────────────────────────────────────────────────────
 def get_db_connection():
     conn = psycopg2.connect(
-        host=os.getenv('DB_HOST'),  
+        host=os.getenv('DB_HOST'),
         database=os.getenv('DB_NAME'),
         user=os.getenv('DB_USER'),
         password=os.getenv('DB_PASSWORD')
     )
     return conn
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute("INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
-                        (username, email, password_hash))
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            return f"Erreur: {e}"
-        finally:
-            cur.close()
-            conn.close()
-        return redirect(url_for('login'))
-
-    return render_template('register.html')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
-        conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
-        user = cur.fetchone()
-        cur.close()
-        conn.close()
-
-        if user and bcrypt.check_password_hash(user['password_hash'], password):
-            session['user_id'] = user['id']
-            session['username'] = user['username']
-            return redirect(url_for('index'))
-        else:
-            return "Nom d'utilisateur ou mot de passe incorrect"
-    return render_template('login.html')
-
+# ── Helpers ────────────────────────────────────────────────────────────────────
 def charger_mangas(user_id):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -72,21 +39,21 @@ def charger_mangas(user_id):
     conn.close()
     return mangas
 
-def sauvegarder_mangas(mangas):
-    with open('mangas.json', 'w', encoding='utf-8') as f:
-        json.dump(mangas, f, ensure_ascii=False, indent=4)
 
-bcrypt = Bcrypt(app)
+def upload_image_cloudinary(file):
+    """Upload a file-like object to Cloudinary and return the secure URL."""
+    result = cloudinary.uploader.upload(
+        file,
+        folder="manga_covers",
+        transformation=[{"width": 400, "height": 570, "crop": "fill", "quality": "auto", "fetch_format": "auto"}]
+    )
+    return result.get("secure_url")
 
-@app.route('/')
-def index():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
 
-    mangas = charger_mangas(session['user_id'])
-
+def enrich_mangas(mangas):
+    """Attach computed fields (non_lu, last_read_label, fini as bool)."""
     for manga in mangas:
-        manga['fini'] = str(manga['fini']).lower() == 'true'
+        manga['fini'] = str(manga.get('fini')).lower() == 'true'
         dl = manga.get('derniere_lecture')
         if dl:
             try:
@@ -105,6 +72,64 @@ def index():
         else:
             manga['non_lu'] = False
             manga['last_read_label'] = "Jamais lu"
+    return mangas
+
+# ── Auth ───────────────────────────────────────────────────────────────────────
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        conn = get_db_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
+                        (username, email, password_hash))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            return f"Erreur: {e}"
+        finally:
+            cur.close()
+            conn.close()
+        return redirect(url_for('login'))
+    return render_template('register.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+        if user and bcrypt.check_password_hash(user['password_hash'], password):
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', error="Nom d'utilisateur ou mot de passe incorrect")
+    return render_template('login.html')
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+# ── Index ──────────────────────────────────────────────────────────────────────
+@app.route('/')
+def index():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    mangas = enrich_mangas(charger_mangas(session['user_id']))
 
     search = request.args.get('search', '').lower()
     filter_fini = request.args.get('filter_fini', '')
@@ -120,13 +145,13 @@ def index():
     else:
         filter_fini_value = None
 
-    filtered_mangas = []
-    for m in mangas:
-        if (search in m['nom'].lower() or search == '') and \
-           (filter_fini_value is None or m['fini'] == filter_fini_value) and \
-           (filter_note == '' or (filter_note and m['note'] == int(filter_note))) and \
-           (not filter_non_lu or m.get('non_lu')):
-            filtered_mangas.append(m)
+    filtered_mangas = [
+        m for m in mangas
+        if (search in m['nom'].lower() or search == '')
+        and (filter_fini_value is None or m['fini'] == filter_fini_value)
+        and (filter_note == '' or m['note'] == int(filter_note))
+        and (not filter_non_lu or m.get('non_lu'))
+    ]
 
     reverse = order == 'desc'
     if sort_by == 'note':
@@ -148,12 +173,20 @@ def index():
 
     return render_template('index.html', mangas=filtered_mangas, sort=sort_by, order=order)
 
-
-
+# ── Ajouter ────────────────────────────────────────────────────────────────────
 @app.route('/ajouter', methods=['POST'])
 def ajouter():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+
+    # Image: uploaded file takes priority over URL fallback
+    image_url = ''
+    image_file = request.files.get('image_file')
+    if image_file and image_file.filename:
+        image_url = upload_image_cloudinary(image_file)
+    else:
+        image_url = request.form.get('image', '')
+
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('''
@@ -161,118 +194,131 @@ def ajouter():
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     ''', (
         request.form['nom'],
+        request.form.get('chapitre', 1),
+        request.form.get('saison', 1),
+        request.form['fini'] == 'oui',
+        request.form['lien'],
+        int(request.form.get('note', 0)),
+        image_url,
+        session['user_id']
+    ))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('index', added=1))
+
+# ── Modifier ───────────────────────────────────────────────────────────────────
+@app.route('/modifier/<int:id>', methods=['POST'])
+def modifier(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    image_file = request.files.get('image_file')
+    if image_file and image_file.filename:
+        image_url = upload_image_cloudinary(image_file)
+    else:
+        image_url = request.form.get('image', '')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        UPDATE mangas
+        SET nom=%s, chapitre=%s, saison=%s, fini=%s, lien=%s, note=%s, image=%s
+        WHERE id=%s AND user_id=%s
+    ''', (
+        request.form['nom'],
         request.form.get('chapitre', 0),
         request.form.get('saison', 0),
         request.form['fini'] == 'oui',
         request.form['lien'],
         int(request.form.get('note', 0)),
-        request.form['image'],
+        image_url,
+        id,
         session['user_id']
     ))
     conn.commit()
+    cur.close()
     conn.close()
-    return redirect(url_for('index', added=1))
-
-
-@app.route('/modifier/<int:id>', methods=['POST'])
-def modifier(id):
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    nom = request.form['nom']
-    chapitre = request.form.get('chapitre', 0)
-    saison = request.form.get('saison', 0)
-    fini = request.form['fini'] == 'oui'
-    lien = request.form['lien']
-    note = int(request.form.get('note', 0))
-    image = request.form['image']
-
-    cur.execute('''
-        UPDATE mangas
-        SET nom = %s, chapitre = %s, saison = %s, fini = %s, lien = %s, note = %s, image = %s
-        WHERE id = %s AND user_id = %s
-    ''', (nom, chapitre, saison, fini, lien, note, image, id, session['user_id']))
-
-    conn.commit()
-    conn.close()
-
     return redirect(url_for('index', updated=1))
 
 
 @app.route('/editer/<int:id>', methods=['GET'])
 def editer(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-
-    cur.execute(
-    'SELECT * FROM mangas WHERE id = %s AND user_id = %s',
-    (id, session['user_id'])
-    )
+    cur.execute('SELECT * FROM mangas WHERE id=%s AND user_id=%s', (id, session['user_id']))
     manga = cur.fetchone()
-
     cur.close()
     conn.close()
-
     return render_template('editer.html', manga=manga)
 
-
-
-
+# ── Modifier chapitre (AJAX) ───────────────────────────────────────────────────
 @app.route('/modifier_chapitre/<int:id>', methods=['POST'])
 def modifier_chapitre(id):
     if 'user_id' not in session:
         return jsonify({"erreur": "Non autorisé"}), 403
-
     changement = request.json['change']
-
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-
-    cur.execute(
-        "SELECT chapitre FROM mangas WHERE id = %s AND user_id = %s",
-        (id, session['user_id'])
-    )
+    cur.execute("SELECT chapitre FROM mangas WHERE id=%s AND user_id=%s", (id, session['user_id']))
     manga = cur.fetchone()
-
     if not manga:
         cur.close()
         conn.close()
         return jsonify({"erreur": "Manga introuvable"}), 404
-
     nouveau_chapitre = max(1, int(manga['chapitre']) + changement)
-
     cur.execute(
-        "UPDATE mangas SET chapitre = %s, derniere_lecture = %s WHERE id = %s AND user_id = %s",
+        "UPDATE mangas SET chapitre=%s, derniere_lecture=%s WHERE id=%s AND user_id=%s",
         (nouveau_chapitre, datetime.now().date(), id, session['user_id'])
     )
-
     conn.commit()
     cur.close()
     conn.close()
-
     return jsonify({"nouveauChapitre": nouveau_chapitre})
 
+# ── Supprimer ──────────────────────────────────────────────────────────────────
 @app.route('/supprimer/<int:id>', methods=['POST'])
 def supprimer(id):
+    if 'user_id' not in session:
+        return '', 403
     conn = get_db_connection()
     cur = conn.cursor()
-
-    cur.execute(
-    'DELETE FROM mangas WHERE id = %s AND user_id = %s',
-    (id, session['user_id'])
-    )
+    cur.execute('DELETE FROM mangas WHERE id=%s AND user_id=%s', (id, session['user_id']))
     conn.commit()
+    cur.close()
     conn.close()
-
     return '', 200
 
+# ── Lire ───────────────────────────────────────────────────────────────────────
+@app.route('/lire/<int:id>')
+def lire_manga(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT lien FROM mangas WHERE id=%s AND user_id=%s", (id, session['user_id']))
+    manga = cur.fetchone()
+    if not manga:
+        cur.close()
+        conn.close()
+        return "Manga introuvable", 404
+    cur.execute("UPDATE mangas SET derniere_lecture=%s WHERE id=%s AND user_id=%s",
+                (datetime.now().date(), id, session['user_id']))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(manga['lien'])
+
+# ── Stats ──────────────────────────────────────────────────────────────────────
 @app.route('/stats')
 def stats():
-    mangas = charger_mangas()
-
+    if 'user_id' not in session:
+        return jsonify({"erreur": "Non autorisé"}), 403
+    mangas = charger_mangas(session['user_id'])
     for m in mangas:
         m['fini'] = str(m.get('fini')).lower() == 'true'
-
     total = len(mangas)
     finis = sum(1 for m in mangas if m['fini'])
     en_cours = total - finis
@@ -287,9 +333,7 @@ def stats():
                 non_lu_count += 1
         except Exception:
             pass
-
     total_chapitres = sum(int(m.get('chapitre', 0) or 0) for m in mangas)
-
     if total > 0:
         moyenne = round(sum(int(m.get('note', 0)) for m in mangas) / total, 2)
         meilleur = max(mangas, key=lambda m: int(m.get('note', 0)))
@@ -299,50 +343,104 @@ def stats():
         moyenne = 0
         meilleur_nom = "Aucun"
         meilleur_note = 0
-
     return jsonify({
-        "total": total,
-        "finis": finis,
-        "en_cours": en_cours,
-        "non_lu_7j": non_lu_count,
-        "total_chapitres": total_chapitres,
-        "moyenne": moyenne,
-        "meilleur_nom": meilleur_nom,
-        "meilleur_note": meilleur_note
+        "total": total, "finis": finis, "en_cours": en_cours,
+        "non_lu_7j": non_lu_count, "total_chapitres": total_chapitres,
+        "moyenne": moyenne, "meilleur_nom": meilleur_nom, "meilleur_note": meilleur_note
     })
 
+# ── Galerie publique ───────────────────────────────────────────────────────────
+@app.route('/galerie')
+def galerie():
+    """Public gallery: all mangas from all users, with copy-to-my-list feature."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
 
-@app.route('/lire/<int:id>')
-def lire_manga(id):
+    search = request.args.get('search', '').lower()
+    filter_note = request.args.get('filter_note', '')
+    filter_fini = request.args.get('filter_fini', '')
+
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    cur.execute(
-    "SELECT lien FROM mangas WHERE id = %s AND user_id = %s",
-    (id, session['user_id'])
-    )
-    manga = cur.fetchone()
+    # Fetch all mangas with their owner username, exclude current user's own mangas
+    cur.execute('''
+        SELECT m.*, u.username AS owner
+        FROM mangas m
+        JOIN users u ON m.user_id = u.id
+        WHERE m.user_id != %s
+        ORDER BY m.nom
+    ''', (session['user_id'],))
+    all_mangas = cur.fetchall()
 
-    if not manga:
-        cur.close()
-        conn.close()
-        return "Manga introuvable", 404
-
-    cur.execute(
-    "UPDATE mangas SET derniere_lecture = %s WHERE id = %s AND user_id = %s",
-    (datetime.now().date(), id, session['user_id'])
-    )
-    conn.commit()
+    # Fetch IDs already in current user's list (to show "already added" state)
+    cur.execute("SELECT nom FROM mangas WHERE user_id = %s", (session['user_id'],))
+    my_noms = {row['nom'].lower() for row in cur.fetchall()}
 
     cur.close()
     conn.close()
 
-    return redirect(manga['lien'])
+    for m in all_mangas:
+        m['fini'] = str(m.get('fini')).lower() == 'true'
+        m['already_have'] = m['nom'].lower() in my_noms
+
+    # Filters
+    if search:
+        all_mangas = [m for m in all_mangas if search in m['nom'].lower()]
+    if filter_note:
+        all_mangas = [m for m in all_mangas if m['note'] == int(filter_note)]
+    if filter_fini == 'oui':
+        all_mangas = [m for m in all_mangas if m['fini']]
+    elif filter_fini == 'non':
+        all_mangas = [m for m in all_mangas if not m['fini']]
+
+    return render_template('galerie.html', mangas=all_mangas)
 
 
+@app.route('/copier/<int:id>', methods=['POST'])
+def copier_manga(id):
+    """Copy another user's manga card into the current user's list."""
+    if 'user_id' not in session:
+        return jsonify({"erreur": "Non autorisé"}), 403
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    # Fetch the source manga (must belong to a different user)
+    cur.execute("SELECT * FROM mangas WHERE id=%s AND user_id != %s", (id, session['user_id']))
+    source = cur.fetchone()
+    if not source:
+        cur.close()
+        conn.close()
+        return jsonify({"erreur": "Manga introuvable"}), 404
+
+    # Insert a copy for the current user — chapitre reset to 1
+    cur2 = conn.cursor()
+    cur2.execute('''
+        INSERT INTO mangas (nom, chapitre, saison, fini, lien, note, image, user_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    ''', (
+        source['nom'],
+        1,                          # chapitre remis à 1
+        source['saison'],
+        source['fini'],
+        source['lien'],
+        source['note'],
+        source['image'],            # Cloudinary URL → stable
+        session['user_id']
+    ))
+    conn.commit()
+    cur.close()
+    cur2.close()
+    conn.close()
+
+    return jsonify({"ok": True, "nom": source['nom']})
+
+# ── Exports ────────────────────────────────────────────────────────────────────
 @app.route('/export')
 def export_json():
-    """Exporte la liste complète des mangas en JSON (sauvegarde)."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     mangas = charger_mangas(session['user_id'])
     out = []
     for m in mangas:
@@ -351,16 +449,14 @@ def export_json():
             row['derniere_lecture'] = str(row['derniere_lecture'])
         out.append(row)
     data = json.dumps(out, ensure_ascii=False, indent=2)
-    return Response(
-        data,
-        mimetype='application/json',
-        headers={'Content-Disposition': 'attachment; filename=mangas-sauvegarde.json'}
-    )
+    return Response(data, mimetype='application/json',
+                    headers={'Content-Disposition': 'attachment; filename=mangas-sauvegarde.json'})
 
 
 @app.route('/export/csv')
 def export_csv():
-    """Exporte la liste des mangas en CSV."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     import csv
     from io import StringIO
     mangas = charger_mangas(session['user_id'])
@@ -375,19 +471,10 @@ def export_csv():
             str(m.get('derniere_lecture') or '')
         ])
     output.seek(0)
-    return Response(
-        output.getvalue(),
-        mimetype='text/csv; charset=utf-8',
-        headers={'Content-Disposition': 'attachment; filename=mangas-sauvegarde.csv'}
-    )
+    return Response(output.getvalue(), mimetype='text/csv; charset=utf-8',
+                    headers={'Content-Disposition': 'attachment; filename=mangas-sauvegarde.csv'})
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000)) 
+    port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-
-

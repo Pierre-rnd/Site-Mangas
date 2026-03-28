@@ -12,8 +12,31 @@
             if (overlay.classList.contains('show')) {
                 overlay.classList.remove('show');
                 document.getElementById('mangaForm').reset();
+                resetImagePreview();
             } else {
                 overlay.classList.add('show');
+            }
+        }
+
+        function resetImagePreview() {
+            var preview = document.getElementById('image-preview');
+            if (preview) { preview.src = ''; preview.style.display = 'none'; }
+            var label = document.getElementById('upload-label');
+            if (label) label.textContent = 'Choisir un fichier…';
+        }
+
+        function previewImage(input, previewId) {
+            var file = input.files[0];
+            var preview = document.getElementById(previewId);
+            var label = input.parentElement.querySelector('.upload-filename');
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                if (label) label.textContent = file.name;
             }
         }
     </script>
@@ -64,7 +87,7 @@
             document.body.removeChild(ta);
         }
     }
-</script>
+    </script>
     <script>
         function modifierChapitre(index, change) {
             var el = document.getElementById('chapitre-' + index);
@@ -88,33 +111,20 @@
         }
     </script>
     <style>
-        .stars {
-            display: flex;
-            flex-direction: row-reverse;
-            justify-content: flex-end;
-            cursor: pointer;
-        }
-
-        .stars input[type="radio"] {
-            display: none;
-        }
-
-        .stars label {
-            font-size: 1.5em;
-            color: #ccc;
-        }
-
+        .stars { display: flex; flex-direction: row-reverse; justify-content: flex-end; cursor: pointer; }
+        .stars input[type="radio"] { display: none; }
+        .stars label { font-size: 1.5em; color: #ccc; }
         .stars input[type="radio"]:checked ~ label,
         .stars label:hover,
-        .stars label:hover ~ label {
-            color: #f5b301;
-        }
+        .stars label:hover ~ label { color: #f5b301; }
     </style>
 </head>
 <h1>Gestionnaire de Mangas</h1>
 
 <body>
     <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Filtres -->
     <form method="GET" action="/" class="filter-form">
         <label for="search">Rechercher</label>
         <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nom du manga..." title="Raccourci : S">
@@ -153,6 +163,7 @@
         <button type="submit">Filtrer</button>
         <a href="/" class="button button-outline">Réinitialiser</a>
     </form>
+
     {% set q = request.args %}
     {% if q.get('search') or q.get('filter_fini') or q.get('filter_note') or q.get('non_lu') %}
     <div class="active-filters">
@@ -163,10 +174,12 @@
         {% if q.get('non_lu') == '1' %}<a href="{{ url_for('index', search=q.get('search'), filter_fini=q.get('filter_fini'), filter_note=q.get('filter_note'), non_lu='', sort=q.get('sort'), order=q.get('order')) }}" class="filter-tag">Non lus 7j+ ×</a>{% endif %}
     </div>
     {% endif %}
+
     <p class="results-count">{{ mangas|length }} manga{{ 's' if mangas|length != 1 else '' }} affiché{{ 's' if mangas|length != 1 else '' }}</p>
 
     <div class="toolbar">
         <button onclick="toggleForm()" class="btn-add-toggle" id="btn-add-manga" title="Raccourci : N">+ Ajouter un manga</button>
+        <a href="{{ url_for('galerie') }}" class="button button-gallery" title="Galerie publique">🌐 Galerie</a>
         <a href="{{ url_for('export_json') }}" class="button button-export" download title="Sauvegarde JSON">📥 JSON</a>
         <a href="{{ url_for('export_csv') }}" class="button button-export" download title="Sauvegarde CSV (Excel)">📥 CSV</a>
         <div class="view-toggle" role="group" aria-label="Vue">
@@ -178,6 +191,7 @@
         <a href="{{ url_for('logout') }}" class="button logout-btn" title="Se déconnecter">⏻ Déconnexion</a>
     </div>
     
+    <!-- Cartes manga -->
     <div class="manga-cards" id="manga-cards">
         {% if not mangas %}
         <div class="empty-state">
@@ -208,14 +222,8 @@
                     <a href="{{ url_for('lire_manga', id=manga.id) }}" target="_blank" class="link-read">Lire le manga</a>
                     <button type="button" class="copy-link-btn" data-url="{{ url_for('lire_manga', id=manga.id, _external=True) }}" onclick="copyReadLink(this)" title="Copier le lien">📋</button>
                 </p>
-                <p>Note: {% for i in range(1, 6) %}
-                    {% if i <= manga.note %}
-                        &#9733;
-                    {% else %}
-                        &#9734;
-                    {% endif %}
-                {% endfor %}</p>
-                <p><a href="{{ url_for('editer', id=manga.id) }}">Modifier</a> </p>
+                <p>Note: {% for i in range(1, 6) %}{% if i <= manga.note %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</p>
+                <p><a href="{{ url_for('editer', id=manga.id) }}">Modifier</a></p>
                 <button class="delete-btn" onclick="supprimerManga('{{ manga.id }}')">Supprimer</button>
             </div>
         </div>
@@ -223,112 +231,123 @@
         {% endif %}
     </div>
 
-<!-- Modal confirmation suppression -->
-<div id="delete-overlay" class="modal-overlay" aria-hidden="true">
-<div id="delete-modal" class="modal confirm-modal">
-    <h3>Supprimer ce manga ?</h3>
-    <p>Cette action est irréversible.</p>
-    <div class="modal-actions">
-        <button type="button" class="button button-outline" onclick="closeDeleteModal()">Annuler</button>
-        <button type="button" class="button delete-btn" onclick="confirmDelete()">Supprimer</button>
-    </div>
-</div>
-</div>
-
-<!-- Modal aide / raccourcis -->
-<div id="help-overlay" class="modal-overlay" aria-hidden="true">
-<div id="help-modal" class="modal help-modal">
-    <span class="modal-close" id="close-help">&times;</span>
-    <h3>Raccourcis & aide</h3>
-    <ul>
-        <li><kbd>N</kbd> Ouvrir / fermer le formulaire « Ajouter un manga »</li>
-        <li><kbd>S</kbd> Focus sur la recherche</li>
-        <li><kbd>Échap</kbd> Fermer le panneau stats ou le formulaire</li>
-        <li><strong>⊞ / ≡</strong> Vue grille ou liste (préférence enregistrée)</li>
-        <li><strong>JSON / CSV</strong> Télécharge une sauvegarde de ta liste</li>
-        <li><strong>Filtres actifs</strong> Clique sur un tag × pour retirer ce filtre</li>
-        <li><strong>Non lus 7j+</strong> Filtre les mangas non lus depuis au moins 7 jours</li>
-        <li><strong>Ordre</strong> Ascendant / Descendant pour inverser le tri</li>
-        <li><strong>☀ / 🌙</strong> Thème clair ou sombre (préférence enregistrée)</li>
-    </ul>
-</div>
-</div>
-
-<!-- Modal Ajouter un manga -->
-<div id="add-overlay" class="modal-overlay" aria-hidden="true">
-<div id="add-modal" class="modal add-manga-modal">
-    <span class="modal-close add-close" onclick="toggleForm()" title="Fermer">&times;</span>
-    <div class="add-manga-header">
-        <span class="add-manga-icon">📖</span>
-        <h2>Ajouter un manga</h2>
-        <p>Remplis les informations de ton nouveau manga</p>
-    </div>
-    <form id="mangaForm" action="/ajouter" method="post" class="form-add-manga">
-        <div class="form-add-grid">
-            <div class="form-add-col">
-                <label for="nom"><i class="fas fa-book"></i> Nom du manga</label>
-                <input type="text" id="nom" name="nom" placeholder="Ex: One Piece" required>
-                
-                <label for="chapitre"><i class="fas fa-file"></i> Chapitre actuel</label>
-                <input type="text" id="chapitre" name="chapitre" placeholder="Ex: 1050" required>
-                
-                <label for="saison"><i class="fas fa-layer-group"></i> Saison actuelle</label>
-                <input type="text" id="saison" name="saison" placeholder="Ex: 1" required>
-                
-                <label for="fini"><i class="fas fa-check-circle"></i> Statut</label>
-                <select id="fini" name="fini">
-                    <option value="non">En cours</option>
-                    <option value="oui">Terminé</option>
-                </select>
+    <!-- Modal suppression -->
+    <div id="delete-overlay" class="modal-overlay" aria-hidden="true">
+        <div id="delete-modal" class="modal confirm-modal">
+            <h3>Supprimer ce manga ?</h3>
+            <p>Cette action est irréversible.</p>
+            <div class="modal-actions">
+                <button type="button" class="button button-outline" onclick="closeDeleteModal()">Annuler</button>
+                <button type="button" class="button delete-btn" onclick="confirmDelete()">Supprimer</button>
             </div>
-            <div class="form-add-col">
-                <label for="lien"><i class="fas fa-link"></i> Lien de lecture</label>
-                <input type="url" id="lien" name="lien" placeholder="https://..." required>
-                
-                <label for="image"><i class="fas fa-image"></i> Lien de la couverture</label>
-                <input type="url" id="image" name="image" placeholder="https://..." required>
-                
-                <label><i class="fas fa-star"></i> Note</label>
-                <div class="stars stars-add">
-                    <input type="radio" id="star5" name="note" value="5" />
-                    <label for="star5"><i class="fas fa-star"></i></label>
-                    <input type="radio" id="star4" name="note" value="4" />
-                    <label for="star4"><i class="fas fa-star"></i></label>
-                    <input type="radio" id="star3" name="note" value="3" />
-                    <label for="star3"><i class="fas fa-star"></i></label>
-                    <input type="radio" id="star2" name="note" value="2" />
-                    <label for="star2"><i class="fas fa-star"></i></label>
-                    <input type="radio" id="star1" name="note" value="1" />
-                    <label for="star1"><i class="fas fa-star"></i></label>
+        </div>
+    </div>
+
+    <!-- Modal aide -->
+    <div id="help-overlay" class="modal-overlay" aria-hidden="true">
+        <div id="help-modal" class="modal help-modal">
+            <span class="modal-close" id="close-help">&times;</span>
+            <h3>Raccourcis & aide</h3>
+            <ul>
+                <li><kbd>N</kbd> Ouvrir / fermer le formulaire « Ajouter un manga »</li>
+                <li><kbd>S</kbd> Focus sur la recherche</li>
+                <li><kbd>Échap</kbd> Fermer le panneau stats ou le formulaire</li>
+                <li><strong>⊞ / ≡</strong> Vue grille ou liste (préférence enregistrée)</li>
+                <li><strong>🌐 Galerie</strong> Voir les mangas des autres utilisateurs et copier des cartes</li>
+                <li><strong>JSON / CSV</strong> Télécharge une sauvegarde de ta liste</li>
+                <li><strong>Filtres actifs</strong> Clique sur un tag × pour retirer ce filtre</li>
+                <li><strong>Non lus 7j+</strong> Filtre les mangas non lus depuis au moins 7 jours</li>
+                <li><strong>☀ / 🌙</strong> Thème clair ou sombre (préférence enregistrée)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Modal Ajouter un manga -->
+    <div id="add-overlay" class="modal-overlay" aria-hidden="true">
+        <div id="add-modal" class="modal add-manga-modal">
+            <span class="modal-close add-close" onclick="toggleForm()" title="Fermer">&times;</span>
+            <div class="add-manga-header">
+                <span class="add-manga-icon">📖</span>
+                <h2>Ajouter un manga</h2>
+                <p>Remplis les informations de ton nouveau manga</p>
+            </div>
+            <form id="mangaForm" action="/ajouter" method="post" enctype="multipart/form-data" class="form-add-manga">
+                <div class="form-add-grid">
+                    <div class="form-add-col">
+                        <label for="nom"><i class="fas fa-book"></i> Nom du manga</label>
+                        <input type="text" id="nom" name="nom" placeholder="Ex: One Piece" required>
+                        
+                        <label for="chapitre"><i class="fas fa-file"></i> Chapitre actuel</label>
+                        <input type="number" id="chapitre" name="chapitre" placeholder="Ex: 1050" min="1" required>
+                        
+                        <label for="saison"><i class="fas fa-layer-group"></i> Saison actuelle</label>
+                        <input type="number" id="saison" name="saison" placeholder="Ex: 1" min="1" required>
+                        
+                        <label for="fini"><i class="fas fa-check-circle"></i> Statut</label>
+                        <select id="fini" name="fini">
+                            <option value="non">En cours</option>
+                            <option value="oui">Terminé</option>
+                        </select>
+                    </div>
+                    <div class="form-add-col">
+                        <label for="lien"><i class="fas fa-link"></i> Lien de lecture</label>
+                        <input type="url" id="lien" name="lien" placeholder="https://..." required>
+                        
+                        <label><i class="fas fa-image"></i> Couverture</label>
+                        <div class="upload-zone">
+                            <label for="image_file" class="upload-btn">
+                                <i class="fas fa-upload"></i> Uploader une image
+                            </label>
+                            <span class="upload-filename">Aucun fichier choisi</span>
+                            <input type="file" id="image_file" name="image_file" accept="image/*"
+                                   onchange="previewImage(this, 'image-preview')" style="display:none">
+                            <p class="upload-or">— ou —</p>
+                            <input type="url" id="image" name="image" placeholder="URL de l'image (optionnel)">
+                            <img id="image-preview" src="" alt="Aperçu" class="image-preview" style="display:none">
+                        </div>
+
+                        <label><i class="fas fa-star"></i> Note</label>
+                        <div class="stars stars-add">
+                            <input type="radio" id="star5" name="note" value="5" />
+                            <label for="star5"><i class="fas fa-star"></i></label>
+                            <input type="radio" id="star4" name="note" value="4" />
+                            <label for="star4"><i class="fas fa-star"></i></label>
+                            <input type="radio" id="star3" name="note" value="3" />
+                            <label for="star3"><i class="fas fa-star"></i></label>
+                            <input type="radio" id="star2" name="note" value="2" />
+                            <label for="star2"><i class="fas fa-star"></i></label>
+                            <input type="radio" id="star1" name="note" value="1" />
+                            <label for="star1"><i class="fas fa-star"></i></label>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        <div class="form-add-actions">
-            <button type="button" class="button button-outline" onclick="toggleForm()">Annuler</button>
-            <button type="submit" class="button btn-submit-add">
-                <i class="fas fa-plus"></i> Ajouter le manga
-            </button>
-        </div>
-    </form>
-</div>
-</div>
-
-<button id="stats-btn" title="Voir les statistiques">📊</button>
-<div id="stats-overlay">
-    <div id="stats-panel">
-        <span id="close-stats">&times;</span>
-        <h2>Statistiques du site</h2>
-        <div id="stats-content">
-            <p><strong>Total de mangas :</strong> <span id="total"></span></p>
-            <p><strong>Mangas terminés :</strong> <span id="finis"></span></p>
-            <p><strong>Mangas en cours :</strong> <span id="en_cours"></span></p>
-            <p><strong>Non lus depuis 7+ jours :</strong> <span id="non_lu_7j"></span></p>
-            <p><strong>Total chapitres :</strong> <span id="total_chapitres"></span></p>
-            <p><strong>Note moyenne :</strong> <span id="moyenne"></span></p>
-            <p><strong>Meilleur manga :</strong> <span id="meilleur"></span></p>
+                <div class="form-add-actions">
+                    <button type="button" class="button button-outline" onclick="toggleForm()">Annuler</button>
+                    <button type="submit" class="button btn-submit-add">
+                        <i class="fas fa-plus"></i> Ajouter le manga
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-</div>
+
+    <!-- Bouton stats -->
+    <button id="stats-btn" title="Voir les statistiques">📊</button>
+    <div id="stats-overlay">
+        <div id="stats-panel">
+            <span id="close-stats">&times;</span>
+            <h2>Statistiques du site</h2>
+            <div id="stats-content">
+                <p><strong>Total de mangas :</strong> <span id="total"></span></p>
+                <p><strong>Mangas terminés :</strong> <span id="finis"></span></p>
+                <p><strong>Mangas en cours :</strong> <span id="en_cours"></span></p>
+                <p><strong>Non lus depuis 7+ jours :</strong> <span id="non_lu_7j"></span></p>
+                <p><strong>Total chapitres :</strong> <span id="total_chapitres"></span></p>
+                <p><strong>Note moyenne :</strong> <span id="moyenne"></span></p>
+                <p><strong>Meilleur manga :</strong> <span id="meilleur"></span></p>
+            </div>
+        </div>
+    </div>
 
 <script>
   const statsBtn = document.getElementById('stats-btn');
@@ -351,125 +370,57 @@
       overlay.setAttribute('aria-hidden', 'false');
     } catch (err) {
       console.error('Impossible de charger les stats :', err);
-      alert("Impossible de récupérer les statistiques. Vérifie la route /stats côté serveur.");
+      alert("Impossible de récupérer les statistiques.");
     }
   }
 
   statsBtn.addEventListener('click', openStats);
-  closeBtn.addEventListener('click', () => {
-    overlay.classList.remove('show');
-    overlay.setAttribute('aria-hidden', 'true');
-  });
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) {
-      overlay.classList.remove('show');
-      overlay.setAttribute('aria-hidden', 'true');
-    }
-  });
+  closeBtn.addEventListener('click', () => { overlay.classList.remove('show'); overlay.setAttribute('aria-hidden', 'true'); });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.classList.remove('show'); overlay.setAttribute('aria-hidden', 'true'); } });
 
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Escape') return;
-    if (document.getElementById('add-overlay').classList.contains('show')) {
-      toggleForm();
-      return;
-    }
-    if (document.getElementById('delete-overlay').classList.contains('show')) {
-      closeDeleteModal();
-      return;
-    }
-    if (document.getElementById('help-overlay').classList.contains('show')) {
-      document.getElementById('help-overlay').classList.remove('show');
-      return;
-    }
-    if (overlay.classList.contains('show')) {
-      overlay.classList.remove('show');
-      overlay.setAttribute('aria-hidden', 'true');
-    }
+    if (document.getElementById('add-overlay').classList.contains('show')) { toggleForm(); return; }
+    if (document.getElementById('delete-overlay').classList.contains('show')) { closeDeleteModal(); return; }
+    if (document.getElementById('help-overlay').classList.contains('show')) { document.getElementById('help-overlay').classList.remove('show'); return; }
+    if (overlay.classList.contains('show')) { overlay.classList.remove('show'); overlay.setAttribute('aria-hidden', 'true'); }
   });
 
-  // Toasts au chargement (après ajout / modification)
   (function() {
     var params = new URLSearchParams(window.location.search);
     var clean = false;
-    if (params.get('added') === '1') {
-      showToast('Manga ajouté');
-      params.delete('added');
-      clean = true;
-    }
-    if (params.get('updated') === '1') {
-      showToast('Modifications enregistrées');
-      params.delete('updated');
-      clean = true;
-    }
-    if (clean) {
-      var q = params.toString();
-      history.replaceState({}, '', window.location.pathname + (q ? '?' + q : ''));
-    }
+    if (params.get('added') === '1') { showToast('Manga ajouté'); params.delete('added'); clean = true; }
+    if (params.get('updated') === '1') { showToast('Modifications enregistrées'); params.delete('updated'); clean = true; }
+    if (clean) { var q = params.toString(); history.replaceState({}, '', window.location.pathname + (q ? '?' + q : '')); }
   })();
 
-  // Raccourcis clavier
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     var tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-    if (e.key === 'n' || e.key === 'N') {
-      e.preventDefault();
-      toggleForm();
-    }
-    if (e.key === 's' || e.key === 'S') {
-      e.preventDefault();
-      document.getElementById('search').focus();
-    }
-    if (e.key === 'Escape') {
-      if (document.getElementById('add-overlay').classList.contains('show')) {
-        toggleForm();
-      }
-    }
+    if (e.key === 'n' || e.key === 'N') { e.preventDefault(); toggleForm(); }
+    if (e.key === 's' || e.key === 'S') { e.preventDefault(); document.getElementById('search').focus(); }
   });
 
-  // Bascule vue grille / liste + sauvegarde préférence
+  // Vue grille / liste
   var viewKey = 'manga-view';
   var listEl = document.getElementById('manga-cards');
   function applyView(view) {
-    var isList = view === 'list';
-    listEl.classList.toggle('view-list', isList);
-    document.querySelectorAll('.view-btn').forEach(function(b) {
-      b.classList.toggle('active', b.getAttribute('data-view') === view);
-    });
+    listEl.classList.toggle('view-list', view === 'list');
+    document.querySelectorAll('.view-btn').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-view') === view); });
     try { localStorage.setItem(viewKey, view); } catch (e) {}
   }
-  try {
-    var saved = localStorage.getItem(viewKey);
-    if (saved === 'list' || saved === 'grid') applyView(saved);
-  } catch (e) {}
-  document.querySelectorAll('.view-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      applyView(btn.getAttribute('data-view'));
-    });
-  });
+  try { var saved = localStorage.getItem(viewKey); if (saved === 'list' || saved === 'grid') applyView(saved); } catch (e) {}
+  document.querySelectorAll('.view-btn').forEach(function(btn) { btn.addEventListener('click', function() { applyView(btn.getAttribute('data-view')); }); });
 
   // Modal aide
-  document.getElementById('help-btn').addEventListener('click', function() {
-    document.getElementById('help-overlay').classList.add('show');
-  });
-  document.getElementById('close-help').addEventListener('click', function() {
-    document.getElementById('help-overlay').classList.remove('show');
-  });
-  document.getElementById('help-overlay').addEventListener('click', function(e) {
-    if (e.target === document.getElementById('help-overlay')) {
-      document.getElementById('help-overlay').classList.remove('show');
-    }
-  });
+  document.getElementById('help-btn').addEventListener('click', function() { document.getElementById('help-overlay').classList.add('show'); });
+  document.getElementById('close-help').addEventListener('click', function() { document.getElementById('help-overlay').classList.remove('show'); });
+  document.getElementById('help-overlay').addEventListener('click', function(e) { if (e.target === document.getElementById('help-overlay')) document.getElementById('help-overlay').classList.remove('show'); });
+  document.getElementById('delete-overlay').addEventListener('click', function(e) { if (e.target === document.getElementById('delete-overlay')) closeDeleteModal(); });
+  document.getElementById('add-overlay').addEventListener('click', function(e) { if (e.target === document.getElementById('add-overlay')) toggleForm(); });
 
-  document.getElementById('delete-overlay').addEventListener('click', function(e) {
-    if (e.target === document.getElementById('delete-overlay')) closeDeleteModal();
-  });
-  document.getElementById('add-overlay').addEventListener('click', function(e) {
-    if (e.target === document.getElementById('add-overlay')) toggleForm();
-  });
-
-  // Thème clair / sombre
+  // Thème
   var themeKey = 'manga-theme';
   var themeBtn = document.getElementById('theme-btn');
   function applyTheme(light) {
@@ -478,15 +429,8 @@
     themeBtn.title = light ? 'Passer au thème sombre' : 'Passer au thème clair';
     try { localStorage.setItem(themeKey, light ? 'light' : 'dark'); } catch (e) {}
   }
-  try {
-    var t = localStorage.getItem(themeKey);
-    applyTheme(t === 'light');
-  } catch (e) {}
-  themeBtn.addEventListener('click', function() {
-    applyTheme(!document.body.classList.contains('theme-light'));
-  });
+  try { var t = localStorage.getItem(themeKey); applyTheme(t === 'light'); } catch (e) {}
+  themeBtn.addEventListener('click', function() { applyTheme(!document.body.classList.contains('theme-light')); });
 </script>
-
-
 </body>
 </html>

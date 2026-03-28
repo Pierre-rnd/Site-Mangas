@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Galerie publique — Mangas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+<div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+<h1>🌐 Galerie publique</h1>
+<p class="gallery-subtitle">Découvre les mangas des autres utilisateurs et copie ceux qui t'intéressent dans ta liste.</p>
+
+<a href="{{ url_for('index') }}" class="back-link">← Retour à ma liste</a>
+
+<!-- Filtres galerie -->
+<form method="GET" action="{{ url_for('galerie') }}" class="filter-form" style="margin-top:1rem;">
+    <label for="search">Rechercher</label>
+    <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nom du manga…">
+
+    <label for="filter-fini">Statut</label>
+    <select id="filter-fini" name="filter_fini">
+        <option value="">Tous</option>
+        <option value="oui" {% if request.args.get('filter_fini') == 'oui' %}selected{% endif %}>Terminés</option>
+        <option value="non" {% if request.args.get('filter_fini') == 'non' %}selected{% endif %}>En cours</option>
+    </select>
+
+    <label for="filter-note">Note min.</label>
+    <select id="filter-note" name="filter_note">
+        <option value="">Toutes</option>
+        {% for i in range(1, 6) %}
+        <option value="{{ i }}" {% if request.args.get('filter_note') == i|string %}selected{% endif %}>{{ i }} ★</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Filtrer</button>
+    <a href="{{ url_for('galerie') }}" class="button button-outline">Réinitialiser</a>
+</form>
+
+<p class="results-count">{{ mangas|length }} manga{{ 's' if mangas|length != 1 else '' }} dans la galerie</p>
+
+<!-- Thème btn (synchronisé avec index) -->
+<div class="gallery-toolbar">
+    <button type="button" id="theme-btn" class="theme-btn" title="Thème clair / sombre">☀</button>
+</div>
+
+<!-- Cartes galerie -->
+<div class="manga-cards" id="manga-cards">
+    {% if not mangas %}
+    <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h2>Aucun manga dans la galerie</h2>
+        <p>Les autres utilisateurs n'ont pas encore partagé de mangas, ou aucun ne correspond à ta recherche.</p>
+        <a href="{{ url_for('index') }}" class="button">Retour à ma liste</a>
+    </div>
+    {% else %}
+    {% for manga in mangas %}
+    <div class="manga-card gallery-card" style="animation-delay: {{ loop.index0 * 0.05 }}s" data-id="{{ manga.id }}">
+        <div class="gallery-owner-badge">👤 {{ manga.owner }}</div>
+        <img src="{{ manga.image }}" alt="{{ manga.nom }}" loading="lazy"
+             onerror="this.onerror=null; this.classList.add('img-fallback'); this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
+        <div class="manga-details">
+            <h3>{{ manga.nom }}</h3>
+            <p>Chapitre : <strong>{{ manga.chapitre }}</strong></p>
+            <p>Saison : {{ manga.saison }}</p>
+            <p>Statut : <span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
+            <p>Note : {% for i in range(1, 6) %}{% if i <= manga.note %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</p>
+
+            {% if manga.already_have %}
+            <button class="copy-card-btn already-have" disabled title="Déjà dans ta liste">
+                ✅ Déjà dans ta liste
+            </button>
+            {% else %}
+            <button class="copy-card-btn" onclick="copierCarte({{ manga.id }}, this)" title="Copier dans ma liste">
+                <i class="fas fa-copy"></i> Copier dans ma liste
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+
+<script>
+function showToast(message, type) {
+    type = type || 'success';
+    var container = document.getElementById('toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = message;
+    container.appendChild(toast);
+    requestAnimationFrame(function() { toast.classList.add('show'); });
+    setTimeout(function() {
+        toast.classList.remove('show');
+        setTimeout(function() { toast.remove(); }, 300);
+    }, 2800);
+}
+
+function copierCarte(id, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Copie…';
+
+    fetch('/copier/' + id, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.ok) {
+            btn.classList.add('already-have');
+            btn.innerHTML = '✅ Déjà dans ta liste';
+            showToast('« ' + data.nom + ' » copié dans ta liste !');
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-copy"></i> Copier dans ma liste';
+            showToast('Erreur lors de la copie.', 'error');
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-copy"></i> Copier dans ma liste';
+        showToast('Erreur réseau.', 'error');
+    });
+}
+
+// Thème synchronisé
+var themeKey = 'manga-theme';
+var themeBtn = document.getElementById('theme-btn');
+function applyTheme(light) {
+    document.body.classList.toggle('theme-light', light);
+    themeBtn.textContent = light ? '🌙' : '☀';
+    themeBtn.title = light ? 'Passer au thème sombre' : 'Passer au thème clair';
+    try { localStorage.setItem(themeKey, light ? 'light' : 'dark'); } catch (e) {}
+}
+try { var t = localStorage.getItem(themeKey); applyTheme(t === 'light'); } catch (e) {}
+themeBtn.addEventListener('click', function() { applyTheme(!document.body.classList.contains('theme-light')); });
+</script>
+
+</body>
+</html>

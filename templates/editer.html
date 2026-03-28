@@ -6,6 +6,22 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script>
+        function previewImage(input, previewId) {
+            var file = input.files[0];
+            var preview = document.getElementById(previewId);
+            var label = input.parentElement.querySelector('.upload-filename');
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                if (label) label.textContent = file.name;
+            }
+        }
+    </script>
 </head>
 <body>
     <a href="{{ url_for('index') }}" class="back-link">← Retour à la liste</a>
@@ -17,17 +33,17 @@
             <p>{{ manga.nom }}</p>
         </div>
         
-        <form action="{{ url_for('modifier', id=manga.id) }}" method="post" class="form-add-manga form-edit-manga">
+        <form action="{{ url_for('modifier', id=manga.id) }}" method="post" enctype="multipart/form-data" class="form-add-manga form-edit-manga">
             <div class="form-add-grid">
                 <div class="form-add-col">
                     <label for="nom"><i class="fas fa-book"></i> Nom du manga</label>
                     <input type="text" id="nom" name="nom" value="{{ manga.nom }}" placeholder="Ex: One Piece" required>
                     
                     <label for="chapitre"><i class="fas fa-file"></i> Chapitre actuel</label>
-                    <input type="text" id="chapitre" name="chapitre" value="{{ manga.chapitre }}" placeholder="Ex: 1050" required>
+                    <input type="number" id="chapitre" name="chapitre" value="{{ manga.chapitre }}" placeholder="Ex: 1050" min="1" required>
                     
                     <label for="saison"><i class="fas fa-layer-group"></i> Saison actuelle</label>
-                    <input type="text" id="saison" name="saison" value="{{ manga.saison }}" placeholder="Ex: 1" required>
+                    <input type="number" id="saison" name="saison" value="{{ manga.saison }}" placeholder="Ex: 1" min="1" required>
                     
                     <label for="fini"><i class="fas fa-check-circle"></i> Statut</label>
                     <select id="fini" name="fini">
@@ -39,9 +55,24 @@
                     <label for="lien"><i class="fas fa-link"></i> Lien de lecture</label>
                     <input type="url" id="lien" name="lien" value="{{ manga.lien }}" placeholder="https://..." required>
                     
-                    <label for="image"><i class="fas fa-image"></i> Lien de la couverture</label>
-                    <input type="url" id="image" name="image" value="{{ manga.image }}" placeholder="https://..." required>
-                    
+                    <label><i class="fas fa-image"></i> Couverture</label>
+                    <div class="upload-zone">
+                        <!-- Current cover preview -->
+                        {% if manga.image %}
+                        <img src="{{ manga.image }}" alt="Couverture actuelle" class="image-preview" style="display:block; margin-bottom: 0.75rem;">
+                        {% endif %}
+
+                        <label for="image_file" class="upload-btn">
+                            <i class="fas fa-upload"></i> Changer l'image
+                        </label>
+                        <span class="upload-filename">Aucun fichier choisi</span>
+                        <input type="file" id="image_file" name="image_file" accept="image/*"
+                               onchange="previewImage(this, 'image-preview-edit')" style="display:none">
+                        <img id="image-preview-edit" src="" alt="Aperçu nouveau fichier" class="image-preview" style="display:none; margin-top:0.5rem;">
+                        <p class="upload-or">— ou modifier l'URL —</p>
+                        <input type="url" id="image" name="image" value="{{ manga.image }}" placeholder="https://...">
+                    </div>
+
                     <label><i class="fas fa-star"></i> Note</label>
                     <div class="stars stars-add">
                         <input type="radio" id="star5" name="note" value="5" {% if manga.note == 5 %}checked{% endif %} />
