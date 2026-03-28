@@ -524,7 +524,7 @@ body.theme-light .copy-card-btn.already-have {
 #stats-overlay.show { display: flex; }
 
 /* ── Utilitaires ───────────────────────────────────────────────────────────── */
-.results-count { color: rgba(255, 255, 255, 0.6); font-size: 0.95rem; margin: -1rem 0 1.5rem 0; font-weight: 500; }
+.results-count { color: rgba(255, 255, 255, 0.6); font-size: 0.95rem; font-weight: 500; }
 
 .empty-state {
   text-align: center;
