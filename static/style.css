@@ -64,7 +64,7 @@ select option { background: #0a0e1a; color: white; }
 label { font-weight: 500; margin-top: 0.5rem; display: block; }
 
 input, select, button, .button {
-  width: 100%;
+  width: 80%;
   margin-top: 0.4rem;
   padding: 0.7rem 1rem;
   font-size: 1rem;
