@@ -82,6 +82,7 @@ def register():
         email = request.form['email']
         password = request.form['password']
         password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
         conn = get_db_connection()
         cur = conn.cursor()
         try:
@@ -90,11 +91,20 @@ def register():
             conn.commit()
         except Exception as e:
             conn.rollback()
-            return f"Erreur: {e}"
+            err = str(e)
+            if 'email' in err:
+                error = "Cette adresse email est déjà utilisée."
+            elif 'username' in err:
+                error = "Ce nom d'utilisateur est déjà pris."
+            else:
+                error = "Une erreur est survenue, veuillez réessayer."
+            return render_template('register.html', error=error,
+                                   username=username, email=email)
         finally:
             cur.close()
             conn.close()
         return redirect(url_for('login'))
+
     return render_template('register.html')
 
 
@@ -363,7 +373,6 @@ def galerie():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Fetch all mangas with their owner username, exclude current user's own mangas
     cur.execute('''
         SELECT m.*, u.username AS owner
         FROM mangas m
@@ -373,7 +382,6 @@ def galerie():
     ''', (session['user_id'],))
     all_mangas = cur.fetchall()
 
-    # Fetch IDs already in current user's list (to show "already added" state)
     cur.execute("SELECT nom FROM mangas WHERE user_id = %s", (session['user_id'],))
     my_noms = {row['nom'].lower() for row in cur.fetchall()}
 
@@ -384,7 +392,6 @@ def galerie():
         m['fini'] = str(m.get('fini')).lower() == 'true'
         m['already_have'] = m['nom'].lower() in my_noms
 
-    # Filters
     if search:
         all_mangas = [m for m in all_mangas if search in m['nom'].lower()]
     if filter_note:

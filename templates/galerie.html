@@ -16,7 +16,6 @@
 
 <a href="{{ url_for('index') }}" class="back-link">← Retour à ma liste</a>
 
-<!-- Filtres galerie -->
 <form method="GET" action="{{ url_for('galerie') }}" class="filter-form" style="margin-top:1rem;">
     <label for="search">Rechercher</label>
     <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nom du manga…">
@@ -42,12 +41,10 @@
 
 <p class="results-count">{{ mangas|length }} manga{{ 's' if mangas|length != 1 else '' }} dans la galerie</p>
 
-<!-- Thème btn (synchronisé avec index) -->
 <div class="gallery-toolbar">
     <button type="button" id="theme-btn" class="theme-btn" title="Thème clair / sombre">☀</button>
 </div>
 
-<!-- Cartes galerie -->
 <div class="manga-cards" id="manga-cards">
     {% if not mangas %}
     <div class="empty-state">
@@ -111,7 +108,7 @@ function copierCarte(id, btn) {
     .then(function(data) {
         if (data.ok) {
             btn.classList.add('already-have');
-            btn.innerHTML = '✅ Déjà dans ta liste';
+            btn.innerHTML = 'Déjà dans ta liste';
             showToast('« ' + data.nom + ' » copié dans ta liste !');
         } else {
             btn.disabled = false;
@@ -126,7 +123,6 @@ function copierCarte(id, btn) {
     });
 }
 
-// Thème synchronisé
 var themeKey = 'manga-theme';
 var themeBtn = document.getElementById('theme-btn');
 function applyTheme(light) {
