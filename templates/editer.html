@@ -49,6 +49,15 @@
                         <option value="non" {% if manga.fini not in (True, 'true', 'True', 'oui') %}selected{% endif %}>En cours</option>
                         <option value="oui" {% if manga.fini in (True, 'true', 'True', 'oui') %}selected{% endif %}>Terminé</option>
                     </select>
+                    <label><i class="fas fa-tags"></i> Genres / Thèmes</label>
+                    <div class="genre-selector">
+                        {% for g in genres_disponibles %}
+                        <label class="genre-checkbox-label">
+                            <input type="checkbox" name="genres" value="{{ g }}" {% if g in manga_genres %}checked{% endif %}>
+                            <span>{{ g }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
                 </div>
                 <div class="form-add-col">
                     <label for="lien"><i class="fas fa-link"></i> Lien de lecture</label>
@@ -86,15 +95,7 @@
                         <label for="star1"><i class="fas fa-star"></i></label>
                     </div>
 
-                    <label><i class="fas fa-tags"></i> Genres / Thèmes</label>
-                    <div class="genre-selector">
-                        {% for g in genres_disponibles %}
-                        <label class="genre-checkbox-label">
-                            <input type="checkbox" name="genres" value="{{ g }}" {% if g in manga_genres %}checked{% endif %}>
-                            <span>{{ g }}</span>
-                        </label>
-                        {% endfor %}
-                    </div>
+            
                 </div>
             </div>
             <div class="form-add-actions">
