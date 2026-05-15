@@ -85,6 +85,16 @@
                         <input type="radio" id="star1" name="note" value="1" {% if manga.note == 1 %}checked{% endif %} />
                         <label for="star1"><i class="fas fa-star"></i></label>
                     </div>
+
+                    <label><i class="fas fa-tags"></i> Genres / Thèmes</label>
+                    <div class="genre-selector">
+                        {% for g in genres_disponibles %}
+                        <label class="genre-checkbox-label">
+                            <input type="checkbox" name="genres" value="{{ g }}" {% if g in manga_genres %}checked{% endif %}>
+                            <span>{{ g }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
             <div class="form-add-actions">

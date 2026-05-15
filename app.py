@@ -30,13 +30,37 @@ def get_db_connection():
     return conn
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
+GENRES_DISPONIBLES = [
+    "Action", "Aventure", "Comédie", "Drame", "Fantasy",
+    "Horreur", "Isekai", "Josei", "Mahou Shoujo", "Mecha",
+    "Mystère", "Romance", "Sci-Fi", "Seinen", "Shojo",
+    "Shonen", "Slice of Life", "Sports", "Surnaturel", "Thriller",
+    "Manwha", "Manhua", "Webtoon", "Yaoi", "Yuri"
+]
+
+def ensure_genres_column():
+    """Ajoute la colonne genres si elle n'existe pas encore."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        ALTER TABLE mangas ADD COLUMN IF NOT EXISTS genres TEXT DEFAULT '';
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+
 def charger_mangas(user_id):
+    ensure_genres_column()
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("SELECT * FROM mangas WHERE user_id = %s", (user_id,))
     mangas = cur.fetchall()
     cur.close()
     conn.close()
+    # Convertir genres en liste
+    for m in mangas:
+        g = m.get('genres') or ''
+        m['genres'] = [x.strip() for x in g.split(',') if x.strip()]
     return mangas
 
 
@@ -145,6 +169,7 @@ def index():
     filter_fini = request.args.get('filter_fini', '')
     filter_note = request.args.get('filter_note', '')
     filter_non_lu = request.args.get('non_lu', '') == '1'
+    filter_genre = request.args.get('filter_genre', '')
     sort_by = request.args.get('sort', 'nom')
     order = request.args.get('order', 'asc' if sort_by == 'nom' else 'desc')
 
@@ -155,12 +180,15 @@ def index():
     else:
         filter_fini_value = None
 
+    filter_genre = request.args.get('filter_genre', '')
+
     filtered_mangas = [
         m for m in mangas
         if (search in m['nom'].lower() or search == '')
         and (filter_fini_value is None or m['fini'] == filter_fini_value)
         and (filter_note == '' or m['note'] == int(filter_note))
         and (not filter_non_lu or m.get('non_lu'))
+        and (filter_genre == '' or filter_genre in m.get('genres', []))
     ]
 
     reverse = order == 'desc'
@@ -181,7 +209,8 @@ def index():
     else:
         filtered_mangas.sort(key=lambda m: m['nom'].lower(), reverse=reverse)
 
-    return render_template('index.html', mangas=filtered_mangas, sort=sort_by, order=order)
+    return render_template('index.html', mangas=filtered_mangas, sort=sort_by, order=order,
+                           genres_disponibles=GENRES_DISPONIBLES, filter_genre=filter_genre)
 
 # ── Ajouter ────────────────────────────────────────────────────────────────────
 @app.route('/ajouter', methods=['POST'])
@@ -197,11 +226,13 @@ def ajouter():
     else:
         image_url = request.form.get('image', '')
 
+    genres_str = ', '.join(request.form.getlist('genres'))
+
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('''
-        INSERT INTO mangas (nom, chapitre, saison, fini, lien, note, image, user_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO mangas (nom, chapitre, saison, fini, lien, note, image, user_id, genres)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     ''', (
         request.form['nom'],
         request.form.get('chapitre', 1),
@@ -210,7 +241,8 @@ def ajouter():
         request.form['lien'],
         int(request.form.get('note', 0)),
         image_url,
-        session['user_id']
+        session['user_id'],
+        genres_str
     ))
     conn.commit()
     cur.close()
@@ -229,11 +261,13 @@ def modifier(id):
     else:
         image_url = request.form.get('image', '')
 
+    genres_str = ', '.join(request.form.getlist('genres'))
+
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('''
         UPDATE mangas
-        SET nom=%s, chapitre=%s, saison=%s, fini=%s, lien=%s, note=%s, image=%s
+        SET nom=%s, chapitre=%s, saison=%s, fini=%s, lien=%s, note=%s, image=%s, genres=%s
         WHERE id=%s AND user_id=%s
     ''', (
         request.form['nom'],
@@ -243,6 +277,7 @@ def modifier(id):
         request.form['lien'],
         int(request.form.get('note', 0)),
         image_url,
+        genres_str,
         id,
         session['user_id']
     ))
@@ -262,7 +297,11 @@ def editer(id):
     manga = cur.fetchone()
     cur.close()
     conn.close()
-    return render_template('editer.html', manga=manga)
+    # Convertir genres en liste pour le template
+    g = manga.get('genres') or '' if manga else ''
+    manga_genres = [x.strip() for x in g.split(',') if x.strip()]
+    return render_template('editer.html', manga=manga, manga_genres=manga_genres,
+                           genres_disponibles=GENRES_DISPONIBLES)
 
 # ── Modifier chapitre (AJAX) ───────────────────────────────────────────────────
 @app.route('/modifier_chapitre/<int:id>', methods=['POST'])
@@ -424,8 +463,8 @@ def copier_manga(id):
     # Insert a copy for the current user — chapitre reset to 1
     cur2 = conn.cursor()
     cur2.execute('''
-        INSERT INTO mangas (nom, chapitre, saison, fini, lien, note, image, user_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO mangas (nom, chapitre, saison, fini, lien, note, image, user_id, genres)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     ''', (
         source['nom'],
         1,                          # chapitre remis à 1
@@ -434,7 +473,8 @@ def copier_manga(id):
         source['lien'],
         source['note'],
         source['image'],            # Cloudinary URL → stable
-        session['user_id']
+        session['user_id'],
+        source.get('genres', '')
     ))
     conn.commit()
     cur.close()
