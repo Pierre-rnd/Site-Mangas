@@ -944,6 +944,7 @@ body.theme-light .form-container p { color: #555; }
     flex-wrap: wrap;
     gap: 4px;
     margin: 6px 0 4px;
+    justify-content: center;
 }
 
 .genre-badge {
