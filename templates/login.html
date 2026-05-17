@@ -2,24 +2,26 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Connexion</title>
+    <title>Connexion — MangaList</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="form-container">
-        <h2>Se connecter</h2>
+        <h2>Connexion</h2>
         {% if error %}
         <div class="error-message">{{ error }}</div>
         {% endif %}
         <form method="POST">
             <label for="username">Nom d'utilisateur</label>
-            <input type="text" id="username" name="username" required autocomplete="username">
+            <input type="text" id="username" name="username" required autocomplete="username" placeholder="Ton pseudo">
             <label for="password">Mot de passe</label>
-            <input type="password" id="password" name="password" required autocomplete="current-password">
-            <button type="submit">Se connecter</button>
+            <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+            <button type="submit" style="margin-top: 1.25rem; width: 100%;">Se connecter</button>
         </form>
-        <p>Pas encore de compte ? <a href="{{ url_for('register') }}">Inscrivez-vous ici</a></p>
+        <p>Pas encore de compte ? <a href="{{ url_for('register') }}">S'inscrire</a></p>
     </div>
 </body>
 </html>
