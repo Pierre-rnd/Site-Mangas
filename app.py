@@ -398,6 +398,51 @@ def stats():
         "moyenne": moyenne, "meilleur_nom": meilleur_nom, "meilleur_note": meilleur_note
     })
 
+# ── Galerie publique ───────────────────────────────────────────────────────────
+@app.route('/galerie')
+def galerie():
+    """Public gallery: all mangas from all users, with copy-to-my-list feature."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    search = request.args.get('search', '').lower()
+    filter_note = request.args.get('filter_note', '')
+    filter_fini = request.args.get('filter_fini', '')
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute('''
+        SELECT m.*, u.username AS owner
+        FROM mangas m
+        JOIN users u ON m.user_id = u.id
+        WHERE m.user_id != %s
+        ORDER BY m.nom
+    ''', (session['user_id'],))
+    all_mangas = cur.fetchall()
+
+    cur.execute("SELECT nom FROM mangas WHERE user_id = %s", (session['user_id'],))
+    my_noms = {row['nom'].lower() for row in cur.fetchall()}
+
+    cur.close()
+    conn.close()
+
+    for m in all_mangas:
+        m['fini'] = str(m.get('fini')).lower() == 'true'
+        m['already_have'] = m['nom'].lower() in my_noms
+
+    if search:
+        all_mangas = [m for m in all_mangas if search in m['nom'].lower()]
+    if filter_note:
+        all_mangas = [m for m in all_mangas if m['note'] == int(filter_note)]
+    if filter_fini == 'oui':
+        all_mangas = [m for m in all_mangas if m['fini']]
+    elif filter_fini == 'non':
+        all_mangas = [m for m in all_mangas if not m['fini']]
+
+    return render_template('galerie.html', mangas=all_mangas)
+
+
 @app.route('/copier/<int:id>', methods=['POST'])
 def copier_manga(id):
     """Copy another user's manga card into the current user's list."""
@@ -437,203 +482,6 @@ def copier_manga(id):
     conn.close()
 
     return jsonify({"ok": True, "nom": source['nom']})
-
-# ── Top 3 ──────────────────────────────────────────────────────────────────────
-@app.route('/top3', methods=['GET', 'POST'])
-def top3():
-    """GET: retourne le top3 de l'utilisateur. POST: sauvegarde."""
-    if 'user_id' not in session:
-        return jsonify({"erreur": "Non autorisé"}), 403
-
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-
-    if request.method == 'POST':
-        data = request.get_json(force=True)
-        ids = data.get('ids', [])   # liste de 0 à 3 ids de mangas
-        # Supprimer l'ancien top3
-        cur.execute("DELETE FROM top3 WHERE user_id = %s", (session['user_id'],))
-        for rank, manga_id in enumerate(ids[:3], start=1):
-            cur.execute(
-                "INSERT INTO top3 (user_id, manga_id, rank) VALUES (%s, %s, %s) "
-                "ON CONFLICT (user_id, rank) DO UPDATE SET manga_id = EXCLUDED.manga_id",
-                (session['user_id'], manga_id, rank)
-            )
-        conn.commit()
-        cur.close(); conn.close()
-        return jsonify({"ok": True})
-
-    # GET
-    cur.execute("""
-        SELECT t.rank, m.id, m.nom, m.image, m.note, m.genres, m.fini
-        FROM top3 t
-        JOIN mangas m ON t.manga_id = m.id
-        WHERE t.user_id = %s
-        ORDER BY t.rank
-    """, (session['user_id'],))
-    rows = cur.fetchall()
-    cur.close(); conn.close()
-    return jsonify([dict(r) for r in rows])
-
-
-# ── Commentaires ───────────────────────────────────────────────────────────────
-@app.route('/commentaires/<int:manga_id>', methods=['GET'])
-def get_commentaires(manga_id):
-    if 'user_id' not in session:
-        return jsonify({"erreur": "Non autorisé"}), 403
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute("""
-        SELECT c.id, c.texte, c.created_at, u.username, c.user_id
-        FROM commentaires c
-        JOIN users u ON c.user_id = u.id
-        WHERE c.manga_id = %s
-        ORDER BY c.created_at DESC
-    """, (manga_id,))
-    rows = cur.fetchall()
-    cur.close(); conn.close()
-    result = []
-    for r in rows:
-        d = dict(r)
-        d['created_at'] = str(d['created_at'])[:10] if d.get('created_at') else ''
-        d['is_mine'] = (d['user_id'] == session['user_id'])
-        result.append(d)
-    return jsonify(result)
-
-
-@app.route('/commentaires/<int:manga_id>', methods=['POST'])
-def post_commentaire(manga_id):
-    if 'user_id' not in session:
-        return jsonify({"erreur": "Non autorisé"}), 403
-    data = request.get_json(force=True)
-    texte = (data.get('texte') or '').strip()
-    if not texte or len(texte) > 1000:
-        return jsonify({"erreur": "Texte invalide"}), 400
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute(
-        "INSERT INTO commentaires (manga_id, user_id, texte, created_at) VALUES (%s, %s, %s, %s) RETURNING id, created_at",
-        (manga_id, session['user_id'], texte, datetime.now().date())
-    )
-    row = cur.fetchone()
-    conn.commit()
-    cur.close(); conn.close()
-    return jsonify({"ok": True, "id": row['id'], "created_at": str(row['created_at'])[:10]})
-
-
-@app.route('/commentaires/delete/<int:comment_id>', methods=['POST'])
-def delete_commentaire(comment_id):
-    if 'user_id' not in session:
-        return jsonify({"erreur": "Non autorisé"}), 403
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM commentaires WHERE id=%s AND user_id=%s", (comment_id, session['user_id']))
-    conn.commit()
-    cur.close(); conn.close()
-    return jsonify({"ok": True})
-
-
-# ── Galerie publique (nouvelle version) ───────────────────────────────────────
-@app.route('/galerie')
-def galerie():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-
-    # ── Top 3 par utilisateur ──────────────────────────────────────────────────
-    cur.execute("""
-        SELECT t.rank, t.user_id, u.username,
-               m.id AS manga_id, m.nom, m.image, m.note, m.genres, m.fini
-        FROM top3 t
-        JOIN users u ON t.user_id = u.id
-        JOIN mangas m ON t.manga_id = m.id
-        ORDER BY u.username, t.rank
-    """)
-    top3_rows = cur.fetchall()
-
-    # Regrouper par utilisateur
-    top3_by_user = {}
-    for row in top3_rows:
-        uid = row['user_id']
-        if uid not in top3_by_user:
-            top3_by_user[uid] = {'username': row['username'], 'user_id': uid, 'mangas': []}
-        row['fini'] = str(row.get('fini')).lower() == 'true'
-        top3_by_user[uid]['mangas'].append(row)
-    top3_users = list(top3_by_user.values())
-
-    # ── Classement global (mangas les mieux notés, toutes notes agrégées) ──────
-    cur.execute("""
-        SELECT m.nom, m.image, m.genres, m.fini,
-               ROUND(AVG(m2.note)::numeric, 2) AS avg_note,
-               COUNT(m2.id) AS nb_votes,
-               MIN(m2.id) AS manga_id
-        FROM mangas m
-        JOIN mangas m2 ON LOWER(m.nom) = LOWER(m2.nom)
-        WHERE m2.note > 0
-        GROUP BY m.nom, m.image, m.genres, m.fini
-        HAVING COUNT(m2.id) >= 1
-        ORDER BY avg_note DESC, nb_votes DESC
-        LIMIT 50
-    """)
-    classement_rows = cur.fetchall()
-    classement = []
-    seen = set()
-    for r in classement_rows:
-        key = r['nom'].lower()
-        if key in seen:
-            continue
-        seen.add(key)
-        d = dict(r)
-        d['fini'] = str(d.get('fini')).lower() == 'true'
-        d['genres_list'] = [x.strip() for x in (d.get('genres') or '').split(',') if x.strip()]
-        d['avg_note'] = float(d['avg_note']) if d['avg_note'] else 0
-        classement.append(d)
-
-    # ── Tous les mangas partagés ───────────────────────────────────────────────
-    search = request.args.get('search', '').lower()
-    filter_note = request.args.get('filter_note', '')
-    filter_fini = request.args.get('filter_fini', '')
-
-    cur.execute("""
-        SELECT m.*, u.username AS owner
-        FROM mangas m
-        JOIN users u ON m.user_id = u.id
-        WHERE m.user_id != %s
-        ORDER BY m.nom
-    """, (session['user_id'],))
-    all_mangas = cur.fetchall()
-
-    cur.execute("SELECT nom FROM mangas WHERE user_id = %s", (session['user_id'],))
-    my_noms = {row['nom'].lower() for row in cur.fetchall()}
-
-    cur.close(); conn.close()
-
-    for m in all_mangas:
-        m['fini'] = str(m.get('fini')).lower() == 'true'
-        m['already_have'] = m['nom'].lower() in my_noms
-        m['genres_list'] = [x.strip() for x in (m.get('genres') or '').split(',') if x.strip()]
-
-    if search:
-        all_mangas = [m for m in all_mangas if search in m['nom'].lower()]
-    if filter_note:
-        all_mangas = [m for m in all_mangas if m['note'] == int(filter_note)]
-    if filter_fini == 'oui':
-        all_mangas = [m for m in all_mangas if m['fini']]
-    elif filter_fini == 'non':
-        all_mangas = [m for m in all_mangas if not m['fini']]
-
-    # Mangas de l'utilisateur (pour la sélection du top3)
-    my_mangas = [{'id': m['id'], 'nom': m['nom'], 'image': m.get('image', ''), 'note': m.get('note', 0)}
-                 for m in (charger_mangas(session['user_id']))]
-
-    return render_template('galerie.html',
-                           mangas=all_mangas,
-                           top3_users=top3_users,
-                           classement=classement,
-                           my_mangas=my_mangas,
-                           current_user_id=session['user_id'])
 
 # ── Exports ────────────────────────────────────────────────────────────────────
 @app.route('/export')

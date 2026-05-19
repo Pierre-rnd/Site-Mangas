@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Espace Communauté — MangaList</title>
+    <title>Galerie publique — Mangas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -11,161 +11,22 @@
 
 <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-<h1>Communauté</h1>
-<p class="gallery-subtitle">Top 3 des membres · Classement global · Tous les mangas partagés</p>
+<h1>🌐 Galerie publique</h1>
+<p class="gallery-subtitle">Découvre les mangas des autres utilisateurs et copie ceux qui t'intéressent dans ta liste.</p>
 
-<div style="display:flex; gap:0.75rem; align-items:center; margin: 0.75rem 0 0; width:100%; max-width:960px; flex-wrap:wrap;">
-    <a href="{{ url_for('index') }}" class="button button-outline" style="font-size:0.82rem; padding:0.45rem 0.9rem;">← Ma liste</a>
-    <button id="theme-btn" class="theme-btn" title="Thème clair/sombre">☀</button>
-    <button id="btn-edit-top3" class="button" style="font-size:0.82rem; padding:0.45rem 0.9rem; margin-left:auto;">
-        <i class="fas fa-trophy"></i> Mon Top 3
-    </button>
-</div>
+<a href="{{ url_for('index') }}" class="back-link">← Retour à ma liste</a>
 
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 1 — TOP 3 PAR UTILISATEUR
-═══════════════════════════════════════════════════════ -->
-<div class="section-header">
-    <h2>🏆 <span>Top 3</span> des membres</h2>
-    <div class="section-divider"></div>
-</div>
-
-{% if top3_users %}
-<div class="top3-grid">
-    {% for user in top3_users %}
-    <div class="top3-card">
-        <div class="top3-user-header">
-            <div class="top3-avatar">{{ user.username[0].upper() }}</div>
-            <div>
-                <div class="top3-username">{{ user.username }}
-                    <small>{{ user.mangas|length }} manga{{ 's' if user.mangas|length > 1 else '' }} dans son top</small>
-                </div>
-            </div>
-        </div>
-        <div class="top3-manga-list">
-            {% for manga in user.mangas %}
-            <div class="top3-manga-item">
-                <div class="top3-rank rank-{{ manga.rank }}">
-                    {% if manga.rank == 1 %}🥇{% elif manga.rank == 2 %}🥈{% else %}🥉{% endif %}
-                </div>
-                <img class="top3-manga-cover"
-                     src="{{ manga.image }}" alt="{{ manga.nom }}"
-                     loading="lazy"
-                     onerror="this.onerror=null; this.classList.add('img-fallback'); this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
-                <div class="top3-manga-info">
-                    <strong title="{{ manga.nom }}">{{ manga.nom }}</strong>
-                    <div class="top3-stars">
-                        {% for i in range(1, 6) %}{% if i <= manga.note %}★{% else %}☆{% endif %}{% endfor %}
-                    </div>
-                    {% if manga.genres %}
-                    <div class="top3-genres">{{ manga.genres[:30] }}{% if manga.genres|length > 30 %}…{% endif %}</div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endfor %}
-</div>
-{% else %}
-<div class="empty-state" style="margin-top:0;">
-    <div class="empty-state-icon">🏆</div>
-    <h2>Aucun Top 3 encore</h2>
-    <p>Sois le premier à afficher ton top 3 de mangas préférés !</p>
-    <button onclick="openTop3Modal()" class="button">Définir mon Top 3</button>
-</div>
-{% endif %}
-
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 2 — CLASSEMENT GLOBAL
-═══════════════════════════════════════════════════════ -->
-<div class="section-header" style="margin-top:3rem;">
-    <h2>📊 <span>Classement</span> global</h2>
-    <div class="section-divider"></div>
-</div>
-
-{% if classement %}
-<div class="ranking-list" id="ranking-list">
-    {% for manga in classement %}
-    {% set loop_idx = loop.index %}
-    <div class="ranking-item" data-manga-id="{{ manga.manga_id }}" data-nom="{{ manga.nom }}"
-         onclick="toggleComments(this, {{ manga.manga_id }}, '{{ manga.nom|replace("'", "\\'") }}')">
-        <div class="rank-badge {% if loop_idx <= 3 %}rank-{{ loop_idx }}{% else %}rank-other{% endif %}">
-            {% if loop_idx == 1 %}🥇{% elif loop_idx == 2 %}🥈{% elif loop_idx == 3 %}🥉{% else %}#{{ loop_idx }}{% endif %}
-        </div>
-        <img class="ranking-cover"
-             src="{{ manga.image }}" alt="{{ manga.nom }}"
-             loading="lazy"
-             onerror="this.onerror=null; this.classList.add('img-fallback'); this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
-        <div class="ranking-info">
-            <strong>{{ manga.nom }}</strong>
-            <div class="ranking-stars">
-                {% for i in range(1, 6) %}{% if i <= manga.avg_note|round|int %}★{% else %}☆{% endif %}{% endfor %}
-            </div>
-            {% if manga.genres_list %}
-            <div class="ranking-genres">
-                {% for g in manga.genres_list[:3] %}
-                <span class="genre-badge">{{ g }}</span>
-                {% endfor %}
-            </div>
-            {% endif %}
-            <div class="ranking-meta">
-                <span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span>
-                · <i class="fas fa-comment" style="font-size:0.72rem;"></i> <span id="nb-comments-{{ manga.manga_id }}">—</span> commentaire(s)
-            </div>
-        </div>
-        <div class="ranking-right">
-            <span class="ranking-score">{{ "%.1f"|format(manga.avg_note) }}</span>
-            <span class="ranking-voters">{{ manga.nb_votes }} vote{{ 's' if manga.nb_votes > 1 else '' }}</span>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
-<!-- Panel commentaires (affiché sous l'item cliqué) -->
-<div class="comments-panel" id="comments-panel">
-    <div class="comments-panel-header">
-        <h3 id="comments-title">Commentaires</h3>
-        <button class="comments-close-btn" onclick="closeComments()">✕</button>
-    </div>
-    <div class="comments-list" id="comments-list">
-        <p class="comment-empty">Chargement…</p>
-    </div>
-    <div class="comment-form-area">
-        <textarea id="comment-input" placeholder="Ajoute un commentaire…" maxlength="1000"></textarea>
-        <button class="button comment-submit-btn" onclick="submitComment()">
-            <i class="fas fa-paper-plane"></i> Envoyer
-        </button>
-    </div>
-</div>
-
-{% else %}
-<div class="empty-state" style="margin-top:0; max-width:500px;">
-    <div class="empty-state-icon">📊</div>
-    <h2>Pas encore de données</h2>
-    <p>Le classement apparaîtra quand les membres auront noté leurs mangas.</p>
-</div>
-{% endif %}
-
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 3 — TOUS LES MANGAS PARTAGÉS
-═══════════════════════════════════════════════════════ -->
-<div class="section-header" style="margin-top:3rem;">
-    <h2>🌐 <span>Tous</span> les mangas</h2>
-    <div class="section-divider"></div>
-</div>
-
-<form method="GET" action="{{ url_for('galerie') }}" class="filter-form" style="margin-bottom:0.75rem;">
+<form method="GET" action="{{ url_for('galerie') }}" class="filter-form" style="margin-top:1rem;">
     <label for="search">Rechercher</label>
     <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nom du manga…">
+
     <label for="filter-fini">Statut</label>
     <select id="filter-fini" name="filter_fini">
         <option value="">Tous</option>
         <option value="oui" {% if request.args.get('filter_fini') == 'oui' %}selected{% endif %}>Terminés</option>
         <option value="non" {% if request.args.get('filter_fini') == 'non' %}selected{% endif %}>En cours</option>
     </select>
+
     <label for="filter-note">Note min.</label>
     <select id="filter-note" name="filter_note">
         <option value="">Toutes</option>
@@ -173,313 +34,105 @@
         <option value="{{ i }}" {% if request.args.get('filter_note') == i|string %}selected{% endif %}>{{ i }} ★</option>
         {% endfor %}
     </select>
+
     <button type="submit">Filtrer</button>
-    <a href="{{ url_for('galerie') }}" class="button button-outline">Reset</a>
+    <a href="{{ url_for('galerie') }}" class="button button-outline">Réinitialiser</a>
 </form>
 
-<p class="results-count">{{ mangas|length }} manga{{ 's' if mangas|length != 1 else '' }}</p>
+<p class="results-count">{{ mangas|length }} manga{{ 's' if mangas|length != 1 else '' }} dans la galerie</p>
+
+<div class="gallery-toolbar">
+    <button type="button" id="theme-btn" class="theme-btn" title="Thème clair / sombre">☀</button>
+</div>
 
 <div class="manga-cards" id="manga-cards">
-{% if not mangas %}
-<div class="empty-state">
-    <div class="empty-state-icon">🔍</div>
-    <h2>Aucun résultat</h2>
-    <p>Aucun manga ne correspond à ta recherche.</p>
-</div>
-{% else %}
-{% for manga in mangas %}
-<div class="manga-card gallery-card" style="animation-delay:{{ loop.index0 * 0.04 }}s">
-    <div class="gallery-owner-badge">{{ manga.owner }}</div>
-    <img src="{{ manga.image }}" alt="{{ manga.nom }}" loading="lazy"
-         onerror="this.onerror=null; this.classList.add('img-fallback'); this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
-    <div class="manga-details">
-        <h3>{{ manga.nom }}</h3>
-        {% if manga.genres_list %}
-        <div class="genre-badges">{% for g in manga.genres_list[:3] %}<span class="genre-badge">{{ g }}</span>{% endfor %}</div>
-        {% endif %}
-        <p><span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
-        <p>Note : {% for i in range(1, 6) %}{% if i <= manga.note %}★{% else %}☆{% endif %}{% endfor %}</p>
-
-        {% if manga.already_have %}
-        <button class="copy-card-btn already-have" disabled>✅ Déjà dans ta liste</button>
-        {% else %}
-        <button class="copy-card-btn" onclick="copierCarte({{ manga.id }}, this)">
-            <i class="fas fa-copy"></i> Copier dans ma liste
-        </button>
-        {% endif %}
-        <button class="gallery-comment-btn" onclick="toggleCommentsFromCard({{ manga.id }}, '{{ manga.nom|replace("'", "\\'") }}', event)">
-            <i class="fas fa-comment"></i> Commenter
-        </button>
+    {% if not mangas %}
+    <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h2>Aucun manga dans la galerie</h2>
+        <p>Les autres utilisateurs n'ont pas encore partagé de mangas, ou aucun ne correspond à ta recherche.</p>
+        <a href="{{ url_for('index') }}" class="button">Retour à ma liste</a>
     </div>
-</div>
-{% endfor %}
-{% endif %}
-</div>
+    {% else %}
+    {% for manga in mangas %}
+    <div class="manga-card gallery-card" style="animation-delay: {{ loop.index0 * 0.05 }}s" data-id="{{ manga.id }}">
+        <div class="gallery-owner-badge">👤 {{ manga.owner }}</div>
+        <img src="{{ manga.image }}" alt="{{ manga.nom }}" loading="lazy"
+             onerror="this.onerror=null; this.classList.add('img-fallback'); this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
+        <div class="manga-details">
+            <h3>{{ manga.nom }}</h3>
+            <p>Chapitre : <strong>{{ manga.chapitre }}</strong></p>
+            <p>Saison : {{ manga.saison }}</p>
+            <p>Statut : <span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
+            <p>Note : {% for i in range(1, 6) %}{% if i <= manga.note %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</p>
 
-
-<!-- ═══════════════════════════════════════════════════════
-     MODAL TOP 3
-═══════════════════════════════════════════════════════ -->
-<div id="top3-overlay" class="modal-overlay" aria-hidden="true">
-    <div class="modal" style="width:460px; max-width:95vw;">
-        <span class="modal-close" onclick="closeTop3Modal()">✕</span>
-        <h3><i class="fas fa-trophy" style="color:var(--gold)"></i> Mon Top 3</h3>
-        <p style="font-size:0.82rem; color:var(--text-dim); margin:0 0 1rem;">Choisis tes 3 mangas préférés — ils apparaîtront dans la galerie.</p>
-
-        <div id="top3-slots" style="display:flex; flex-direction:column; gap:0.6rem; margin-bottom:1rem;">
-            <div class="top3-slot" data-slot="1">
-                <label style="margin:0; font-size:0.72rem;">🥇 Rang 1</label>
-                <select class="top3-select" data-slot="1" style="margin-top:0.2rem;">
-                    <option value="">— Choisir un manga —</option>
-                    {% for m in my_mangas %}
-                    <option value="{{ m.id }}">{{ m.nom }} ({{ m.note }}★)</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="top3-slot" data-slot="2">
-                <label style="margin:0; font-size:0.72rem;">🥈 Rang 2</label>
-                <select class="top3-select" data-slot="2" style="margin-top:0.2rem;">
-                    <option value="">— Choisir un manga —</option>
-                    {% for m in my_mangas %}
-                    <option value="{{ m.id }}">{{ m.nom }} ({{ m.note }}★)</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="top3-slot" data-slot="3">
-                <label style="margin:0; font-size:0.72rem;">🥉 Rang 3</label>
-                <select class="top3-select" data-slot="3" style="margin-top:0.2rem;">
-                    <option value="">— Choisir un manga —</option>
-                    {% for m in my_mangas %}
-                    <option value="{{ m.id }}">{{ m.nom }} ({{ m.note }}★)</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <div style="display:flex; gap:0.6rem; justify-content:flex-end;">
-            <button class="button button-outline" onclick="closeTop3Modal()">Annuler</button>
-            <button class="button btn-submit-add" onclick="saveTop3()">
-                <i class="fas fa-save"></i> Sauvegarder
+            {% if manga.already_have %}
+            <button class="copy-card-btn already-have" disabled title="Déjà dans ta liste">
+                ✅ Déjà dans ta liste
             </button>
+            {% else %}
+            <button class="copy-card-btn" onclick="copierCarte({{ manga.id }}, this)" title="Copier dans ma liste">
+                <i class="fas fa-copy"></i> Copier dans ma liste
+            </button>
+            {% endif %}
         </div>
     </div>
+    {% endfor %}
+    {% endif %}
 </div>
-
 
 <script>
-/* ── Toast ── */
-function showToast(msg, type) {
+function showToast(message, type) {
     type = type || 'success';
-    var c = document.getElementById('toast-container');
-    var t = document.createElement('div');
-    t.className = 'toast toast-' + type;
-    t.textContent = msg;
-    c.appendChild(t);
-    requestAnimationFrame(function() { t.classList.add('show'); });
-    setTimeout(function() { t.classList.remove('show'); setTimeout(function() { t.remove(); }, 300); }, 2800);
+    var container = document.getElementById('toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = message;
+    container.appendChild(toast);
+    requestAnimationFrame(function() { toast.classList.add('show'); });
+    setTimeout(function() {
+        toast.classList.remove('show');
+        setTimeout(function() { toast.remove(); }, 300);
+    }, 2800);
 }
 
-/* ── Thème ── */
+function copierCarte(id, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Copie…';
+
+    fetch('/copier/' + id, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.ok) {
+            btn.classList.add('already-have');
+            btn.innerHTML = 'Déjà dans ta liste';
+            showToast('« ' + data.nom + ' » copié dans ta liste !');
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-copy"></i> Copier dans ma liste';
+            showToast('Erreur lors de la copie.', 'error');
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-copy"></i> Copier dans ma liste';
+        showToast('Erreur réseau.', 'error');
+    });
+}
+
+var themeKey = 'manga-theme';
 var themeBtn = document.getElementById('theme-btn');
 function applyTheme(light) {
     document.body.classList.toggle('theme-light', light);
     themeBtn.textContent = light ? '🌙' : '☀';
-    try { localStorage.setItem('manga-theme', light ? 'light' : 'dark'); } catch(e) {}
+    themeBtn.title = light ? 'Passer au thème sombre' : 'Passer au thème clair';
+    try { localStorage.setItem(themeKey, light ? 'light' : 'dark'); } catch (e) {}
 }
-try { applyTheme(localStorage.getItem('manga-theme') === 'light'); } catch(e) {}
+try { var t = localStorage.getItem(themeKey); applyTheme(t === 'light'); } catch (e) {}
 themeBtn.addEventListener('click', function() { applyTheme(!document.body.classList.contains('theme-light')); });
-
-/* ── Copier carte ── */
-function copierCarte(id, btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    fetch('/copier/' + id, { method: 'POST', headers: {'Content-Type': 'application/json'} })
-        .then(r => r.json())
-        .then(data => {
-            if (data.ok) {
-                btn.classList.add('already-have');
-                btn.innerHTML = '✅ Déjà dans ta liste';
-                showToast('« ' + data.nom + ' » copié !');
-            } else { btn.disabled = false; btn.innerHTML = '<i class="fas fa-copy"></i> Copier dans ma liste'; showToast('Erreur', 'error'); }
-        })
-        .catch(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-copy"></i> Copier dans ma liste'; showToast('Erreur réseau', 'error'); });
-}
-
-/* ── Commentaires ── */
-var currentMangaId = null;
-var commentCounts = {};
-
-// Précharger le nb de commentaires pour le classement
-document.querySelectorAll('.ranking-item').forEach(function(item) {
-    var mid = item.dataset.mangaId;
-    fetch('/commentaires/' + mid)
-        .then(r => r.json())
-        .then(data => {
-            if (Array.isArray(data)) {
-                commentCounts[mid] = data.length;
-                var el = document.getElementById('nb-comments-' + mid);
-                if (el) el.textContent = data.length;
-            }
-        }).catch(() => {});
-});
-
-function toggleComments(el, mangaId, nom) {
-    var panel = document.getElementById('comments-panel');
-    if (currentMangaId === mangaId && panel.classList.contains('open')) {
-        closeComments(); return;
-    }
-    // Déplacer le panel après l'item cliqué
-    el.parentNode.insertBefore(panel, el.nextSibling);
-    openComments(mangaId, nom);
-    document.querySelectorAll('.ranking-item').forEach(function(i) { i.classList.remove('active'); });
-    el.classList.add('active');
-}
-
-function toggleCommentsFromCard(mangaId, nom, evt) {
-    evt.stopPropagation();
-    var panel = document.getElementById('comments-panel');
-    // Mettre le panel après la section ranking ou à la fin
-    var rankingList = document.getElementById('ranking-list');
-    if (rankingList) rankingList.parentNode.insertBefore(panel, rankingList.nextSibling);
-    else document.querySelector('.manga-cards').parentNode.appendChild(panel);
-    openComments(mangaId, nom);
-}
-
-function openComments(mangaId, nom) {
-    currentMangaId = mangaId;
-    var panel = document.getElementById('comments-panel');
-    panel.classList.add('open');
-    document.getElementById('comments-title').textContent = '💬 ' + nom;
-    document.getElementById('comment-input').value = '';
-    loadComments(mangaId);
-    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function closeComments() {
-    document.getElementById('comments-panel').classList.remove('open');
-    document.querySelectorAll('.ranking-item').forEach(function(i) { i.classList.remove('active'); });
-    currentMangaId = null;
-}
-
-function loadComments(mangaId) {
-    var list = document.getElementById('comments-list');
-    list.innerHTML = '<p class="comment-empty">Chargement…</p>';
-    fetch('/commentaires/' + mangaId)
-        .then(r => r.json())
-        .then(function(data) {
-            if (!Array.isArray(data) || data.length === 0) {
-                list.innerHTML = '<p class="comment-empty">Aucun commentaire pour l\'instant. Sois le premier !</p>';
-                return;
-            }
-            list.innerHTML = '';
-            data.forEach(function(c) {
-                var item = document.createElement('div');
-                item.className = 'comment-item' + (c.is_mine ? ' own' : '');
-                item.dataset.id = c.id;
-                item.innerHTML = `
-                    <div class="comment-avatar">${c.username[0].toUpperCase()}</div>
-                    <div class="comment-body">
-                        <div class="comment-header">
-                            <span class="comment-author">${escHtml(c.username)}</span>
-                            <span class="comment-date">${c.created_at}</span>
-                            <button class="comment-delete-btn" onclick="deleteComment(${c.id})"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                        <div class="comment-text">${escHtml(c.texte)}</div>
-                    </div>`;
-                list.appendChild(item);
-            });
-        })
-        .catch(() => { list.innerHTML = '<p class="comment-empty">Erreur de chargement.</p>'; });
-}
-
-function submitComment() {
-    if (!currentMangaId) return;
-    var input = document.getElementById('comment-input');
-    var texte = input.value.trim();
-    if (!texte) return;
-    fetch('/commentaires/' + currentMangaId, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ texte: texte })
-    })
-    .then(r => r.json())
-    .then(function(data) {
-        if (data.ok) {
-            input.value = '';
-            loadComments(currentMangaId);
-            // Mettre à jour le compteur
-            if (commentCounts[currentMangaId] !== undefined) {
-                commentCounts[currentMangaId]++;
-                var el = document.getElementById('nb-comments-' + currentMangaId);
-                if (el) el.textContent = commentCounts[currentMangaId];
-            }
-        } else { showToast(data.erreur || 'Erreur', 'error'); }
-    })
-    .catch(() => showToast('Erreur réseau', 'error'));
-}
-
-function deleteComment(id) {
-    if (!confirm('Supprimer ce commentaire ?')) return;
-    fetch('/commentaires/delete/' + id, { method: 'POST' })
-        .then(r => r.json())
-        .then(function(d) { if (d.ok) loadComments(currentMangaId); })
-        .catch(() => showToast('Erreur', 'error'));
-}
-
-// Enter pour envoyer, Shift+Enter pour nouvelle ligne
-document.getElementById('comment-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); }
-});
-
-function escHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-/* ── Modal Top 3 ── */
-function openTop3Modal() {
-    document.getElementById('top3-overlay').classList.add('show');
-    // Charger les valeurs actuelles
-    fetch('/top3')
-        .then(r => r.json())
-        .then(function(data) {
-            document.querySelectorAll('.top3-select').forEach(function(sel) { sel.value = ''; });
-            data.forEach(function(item) {
-                var sel = document.querySelector('.top3-select[data-slot="' + item.rank + '"]');
-                if (sel) sel.value = item.id;
-            });
-        }).catch(() => {});
-}
-function closeTop3Modal() {
-    document.getElementById('top3-overlay').classList.remove('show');
-}
-function saveTop3() {
-    var ids = [];
-    document.querySelectorAll('.top3-select').forEach(function(sel) {
-        if (sel.value) ids.push(parseInt(sel.value));
-    });
-    if (ids.length === 0) { showToast('Sélectionne au moins un manga', 'error'); return; }
-    // Vérifier les doublons
-    if (new Set(ids).size !== ids.length) { showToast('Tu as sélectionné le même manga deux fois', 'error'); return; }
-    fetch('/top3', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ ids: ids })
-    })
-    .then(r => r.json())
-    .then(function(d) {
-        if (d.ok) { closeTop3Modal(); showToast('Top 3 sauvegardé !'); setTimeout(() => location.reload(), 800); }
-        else showToast('Erreur', 'error');
-    })
-    .catch(() => showToast('Erreur réseau', 'error'));
-}
-
-document.getElementById('btn-edit-top3').addEventListener('click', openTop3Modal);
-document.getElementById('top3-overlay').addEventListener('click', function(e) {
-    if (e.target === this) closeTop3Modal();
-});
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { closeTop3Modal(); closeComments(); }
-});
 </script>
 
 </body>
