@@ -118,6 +118,72 @@
         .stars label:hover,
         .stars label:hover ~ label { color: #f5b301; }
     </style>
+
+<style>
+/* ── Commentaires perso ───────────────────────────────── */
+.comment-toggle-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    margin-top: 0.4rem; width: 100%; padding: 0.38rem 0.75rem;
+    font-size: 0.8rem; font-weight: 600; border-radius: 8px;
+    border: 1px solid rgba(0,183,255,0.25);
+    background: rgba(0,183,255,0.07); color: rgba(0,183,255,0.85);
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: none; font-family: 'Poppins', sans-serif;
+}
+.comment-toggle-btn:hover, .comment-toggle-btn.active {
+    border-color: #00b7ff; background: rgba(0,183,255,0.15); color: #00b7ff;
+}
+body.theme-light .comment-toggle-btn { border-color: rgba(0,100,180,0.25); background: rgba(0,100,180,0.06); color: #0055aa; }
+body.theme-light .comment-toggle-btn:hover, body.theme-light .comment-toggle-btn.active { border-color: #0055aa; color: #0055aa; }
+
+.comments-panel {
+    display: none;
+    padding: 0.75rem 0.85rem 0.6rem;
+    border-top: 1px solid rgba(0,183,255,0.15);
+    background: rgba(0,183,255,0.03);
+}
+.comments-panel.open { display: block; }
+
+.comments-list { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.6rem; }
+.comment-item { display: flex; gap: 0.5rem; }
+.comment-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg,#00b7ff,#6c00ff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.68rem; font-weight: 700; color:#fff; flex-shrink:0;
+}
+.comment-body { flex: 1; min-width: 0; }
+.comment-header { display: flex; align-items: baseline; gap: 0.4rem; margin-bottom: 0.1rem; }
+.comment-author { font-size: 0.76rem; font-weight: 600; color: #00b7ff; }
+.comment-date   { font-size: 0.68rem; color: rgba(255,255,255,0.35); }
+.comment-del {
+    margin-left: auto; background: none; border: none;
+    color: rgba(231,76,60,0.45); font-size: 0.72rem;
+    padding: 0; cursor: pointer; display: none;
+}
+.comment-item.own .comment-del { display: inline; }
+.comment-del:hover { color: #e74c3c; }
+.comment-text { font-size: 0.82rem; color: rgba(255,255,255,0.72); line-height: 1.45; word-break: break-word; }
+.comment-empty { font-size: 0.78rem; color: rgba(255,255,255,0.35); font-style: italic; text-align: center; padding: 0.25rem 0; }
+
+.comment-form { display: flex; gap: 0.4rem; align-items: flex-end; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 0.5rem; }
+.comment-textarea {
+    flex: 1; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(0,183,255,0.2); border-radius: 8px;
+    color: rgba(255,255,255,0.88); font-family: 'Poppins', sans-serif;
+    font-size: 0.8rem; padding: 0.45rem 0.7rem; resize: none; height: 52px;
+    outline: none; transition: border-color 0.2s; width: auto; margin: 0;
+}
+.comment-textarea:focus { border-color: #00b7ff; }
+.comment-send { padding: 0.45rem 0.75rem !important; font-size: 0.78rem !important; flex-shrink: 0; align-self: flex-end; }
+
+body.theme-light .comments-panel { background: rgba(0,100,180,0.04); border-color: rgba(0,100,180,0.15); }
+body.theme-light .comment-text { color: #2d3548; }
+body.theme-light .comment-date { color: #aaa; }
+body.theme-light .comment-empty { color: #aaa; }
+body.theme-light .comment-textarea { background: rgba(255,255,255,0.9); border-color: rgba(0,100,180,0.2); color: #1a1f2e; }
+body.theme-light .comment-author { color: #0055aa; }
+</style>
 </head>
 <h1>Gestionnaire de Mangas</h1>
 
@@ -239,6 +305,20 @@
                 {% endif %}
                 <p><a href="{{ url_for('editer', id=manga.id) }}">Modifier</a></p>
                 <button class="delete-btn" onclick="supprimerManga('{{ manga.id }}')">Supprimer</button>
+                <button class="comment-toggle-btn" onclick="toggleComments({{ manga.id }}, this)" title="Commentaires">
+                    <i class="fas fa-comment"></i> Notes perso <span id="nb-{{ manga.id }}"></span>
+                </button>
+            </div>
+            <div class="comments-panel" id="panel-{{ manga.id }}">
+                <div class="comments-list" id="list-{{ manga.id }}"></div>
+                <div class="comment-form">
+                    <textarea class="comment-textarea" id="input-{{ manga.id }}"
+                              placeholder="Ajoute une note…" maxlength="1000"
+                              onkeydown="handleCommentKey(event, {{ manga.id }})"></textarea>
+                    <button class="button comment-send" onclick="sendComment({{ manga.id }})">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -455,6 +535,91 @@
   }
   try { var t = localStorage.getItem(themeKey); applyTheme(t === 'light'); } catch (e) {}
   themeBtn.addEventListener('click', function() { applyTheme(!document.body.classList.contains('theme-light')); });
+</script>
+
+<script>
+/* ── Commentaires ─────────────────────────────────── */
+var _loadedPanels = {};
+
+function toggleComments(mangaId, btn) {
+    var panel = document.getElementById('panel-' + mangaId);
+    var open  = panel.classList.contains('open');
+    panel.classList.toggle('open', !open);
+    btn.classList.toggle('active', !open);
+    if (!open && !_loadedPanels[mangaId]) loadComments(mangaId);
+}
+
+function loadComments(mangaId) {
+    var list = document.getElementById('list-' + mangaId);
+    list.innerHTML = '<p class="comment-empty">Chargement…</p>';
+    fetch('/commentaires/' + mangaId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            _loadedPanels[mangaId] = true;
+            renderComments(mangaId, data);
+        })
+        .catch(function() { list.innerHTML = '<p class="comment-empty">Erreur.</p>'; });
+}
+
+function renderComments(mangaId, data) {
+    var list = document.getElementById('list-' + mangaId);
+    var nb   = document.getElementById('nb-' + mangaId);
+    if (nb) nb.textContent = data.length ? '(' + data.length + ')' : '';
+    if (!data.length) {
+        list.innerHTML = '<p class="comment-empty">Aucune note. Ajoutes-en une !</p>';
+        return;
+    }
+    list.innerHTML = '';
+    data.forEach(function(c) {
+        var el = document.createElement('div');
+        el.className = 'comment-item' + (c.is_mine ? ' own' : '');
+        el.dataset.id = c.id;
+        el.innerHTML =
+            '<div class="comment-avatar">' + escH(c.username[0].toUpperCase()) + '</div>' +
+            '<div class="comment-body">' +
+              '<div class="comment-header">' +
+                '<span class="comment-author">' + escH(c.username) + '</span>' +
+                '<span class="comment-date">' + escH(c.created_at) + '</span>' +
+                '<button class="comment-del" onclick="delComment(' + c.id + ',' + mangaId + ')"><i class="fas fa-trash-alt"></i></button>' +
+              '</div>' +
+              '<div class="comment-text">' + escH(c.texte) + '</div>' +
+            '</div>';
+        list.appendChild(el);
+    });
+}
+
+function sendComment(mangaId) {
+    var input = document.getElementById('input-' + mangaId);
+    var texte = input.value.trim();
+    if (!texte) return;
+    fetch('/commentaires/' + mangaId, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({texte: texte})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.ok) { input.value = ''; loadComments(mangaId); }
+        else showToast(d.erreur || 'Erreur', 'error');
+    })
+    .catch(function() { showToast('Erreur réseau', 'error'); });
+}
+
+function delComment(cid, mangaId) {
+    if (!confirm('Supprimer ce commentaire ?')) return;
+    fetch('/commentaires/delete/' + cid, {method: 'POST'})
+        .then(function(r) { return r.json(); })
+        .then(function(d) { if (d.ok) loadComments(mangaId); })
+        .catch(function() { showToast('Erreur', 'error'); });
+}
+
+function handleCommentKey(e, mangaId) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComment(mangaId); }
+}
+
+function escH(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>

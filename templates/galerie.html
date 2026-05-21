@@ -7,294 +7,175 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ── Styles spécifiques à la galerie (non présents dans style.css) ── */
-
-        /* Séparateur de section */
-        .section-title {
-            width: 90%;
-            max-width: 900px;
+        /* ── Top 3 modal ── */
+        .top3-modal-inner {
+            width: 680px;
+            max-width: 95vw;
+            max-height: 88vh;
+            overflow: hidden;
             display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin: 2.5rem 0 1rem;
+            flex-direction: column;
         }
-        .section-title h2 {
-            font-size: 0.9rem;
-            font-weight: 700;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.45);
-            white-space: nowrap;
-            margin: 0;
-        }
-        .section-title h2 span { color: #00b7ff; }
-        .section-line {
+        .top3-modal-body {
             flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, rgba(0,183,255,0.3), transparent);
+            overflow-y: auto;
+            padding: 1rem 1.5rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
 
-        /* ── Top 3 par utilisateur ── */
-        .top3-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-            gap: 1rem;
-            width: 90%;
-            max-width: 900px;
-        }
-
-        .top3-card {
+        /* ── Carte Top 3 d'un user ── */
+        .top3-user-block {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(0,183,255,0.18);
-            border-radius: 16px;
+            border-radius: 14px;
             overflow: hidden;
-            backdrop-filter: blur(10px);
-            transition: border-color 0.25s, box-shadow 0.25s;
         }
-        .top3-card:hover {
-            border-color: rgba(0,183,255,0.5);
-            box-shadow: 0 0 25px rgba(0,183,255,0.12);
-        }
-
         .top3-user-header {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.85rem 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.07);
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             background: linear-gradient(90deg, rgba(108,0,255,0.1), transparent);
         }
         .top3-avatar {
-            width: 36px; height: 36px;
+            width: 34px; height: 34px;
             border-radius: 50%;
             background: linear-gradient(135deg, #00b7ff, #6c00ff);
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1rem; color: #fff;
+            font-weight: 700; font-size: 0.95rem; color: #fff;
             flex-shrink: 0;
         }
-        .top3-username {
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: rgba(255,255,255,0.9);
-        }
-        .top3-username small {
-            display: block;
-            font-size: 0.72rem;
-            color: rgba(255,255,255,0.4);
-            font-weight: 400;
-        }
+        .top3-username { font-weight: 600; font-size: 0.9rem; color: rgba(255,255,255,0.9); }
+        .top3-username small { display: block; font-size: 0.7rem; color: rgba(255,255,255,0.4); font-weight: 400; }
 
-        .top3-manga-list {
-            padding: 0.75rem 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.65rem;
-        }
-        .top3-manga-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .top3-rank {
-            font-weight: 800;
-            font-size: 1.5rem;
-            width: 30px;
-            text-align: center;
-            flex-shrink: 0;
-            line-height: 1;
-        }
+        .top3-manga-list { padding: 0.65rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+        .top3-manga-item { display: flex; align-items: center; gap: 0.7rem; }
+        .top3-rank { font-weight: 800; font-size: 1.4rem; width: 28px; text-align: center; flex-shrink: 0; line-height: 1; }
         .top3-rank.r1 { color: #FFD700; }
         .top3-rank.r2 { color: #C0C0C0; }
         .top3-rank.r3 { color: #CD7F32; }
-
         .top3-cover {
-            width: 44px; height: 62px;
+            width: 42px; height: 58px;
             object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.1);
             flex-shrink: 0;
         }
         .top3-cover.img-fallback { object-fit: none; background: rgba(30,40,60,0.9); }
-
         .top3-info { flex: 1; min-width: 0; }
-        .top3-info strong {
-            display: block;
-            font-size: 0.88rem;
-            color: rgba(255,255,255,0.9);
-            white-space: nowrap;
+        .top3-info strong { display: block; font-size: 0.85rem; color: rgba(255,255,255,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .top3-info .top3-stars { font-size: 0.78rem; color: #f5b301; }
+        .top3-empty-inline { font-size: 0.8rem; color: rgba(255,255,255,0.3); font-style: italic; padding: 0.5rem 0; }
+
+        /* ── Bloc Mon Top 3 dans la modal ── */
+        .my-top3-block {
+            border: 1px solid rgba(0,183,255,0.35);
+            border-radius: 14px;
             overflow: hidden;
-            text-overflow: ellipsis;
+            background: rgba(0,183,255,0.04);
         }
-        .top3-info .top3-stars { font-size: 0.8rem; color: #f5b301; }
-        .top3-empty {
-            padding: 1rem;
-            text-align: center;
-            color: rgba(255,255,255,0.3);
-            font-size: 0.82rem;
-            font-style: italic;
+        .my-top3-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid rgba(0,183,255,0.15);
+            background: linear-gradient(90deg, rgba(0,183,255,0.1), transparent);
         }
+        .my-top3-title { font-weight: 700; font-size: 0.9rem; color: #00b7ff; }
+        .my-top3-title small { display: block; font-size: 0.7rem; color: rgba(255,255,255,0.4); font-weight: 400; }
+        .btn-edit-top3 {
+            font-size: 0.78rem !important;
+            padding: 0.35rem 0.8rem !important;
+            flex-shrink: 0;
+        }
+        .my-top3-selects { padding: 0.85rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.55rem; }
+        .top3-slot-row { display: grid; grid-template-columns: 30px 1fr; gap: 0.6rem; align-items: center; }
+        .top3-slot-rank { font-weight: 800; font-size: 1.2rem; text-align: center; }
+        .my-top3-actions { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 0 1rem 0.85rem; }
 
-        /* ── Bouton Mon Top 3 ── */
-        .btn-top3 {
-            background: linear-gradient(90deg, rgba(108,0,255,0.6), rgba(0,183,255,0.6)) !important;
-            border: 1px solid rgba(0,183,255,0.4) !important;
-            font-size: 0.85rem !important;
-            padding: 0.5rem 1rem !important;
+        /* ── Panel commentaires lecture seule ── */
+        .comments-readonly-panel {
+            display: none;
+            background: rgba(10,14,26,0.97);
+            border: 1px solid rgba(0,183,255,0.22);
+            border-radius: 12px;
+            padding: 0.9rem 1rem;
+            margin-top: 0.4rem;
+            animation: fadeInCmt 0.2s ease;
         }
-        .btn-top3:hover {
-            background: linear-gradient(90deg, #6c00ff, #00b7ff) !important;
-            box-shadow: 0 0 20px rgba(0,183,255,0.3) !important;
+        .comments-readonly-panel.open { display: block; }
+        @keyframes fadeInCmt {
+            from { opacity: 0; transform: translateY(-5px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
+        .comments-readonly-list { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.55rem; }
+        .comment-item-ro { display: flex; gap: 0.55rem; }
+        .comment-avatar-ro {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00b7ff, #6c00ff);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.68rem; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+        }
+        .comment-body-ro { flex: 1; min-width: 0; }
+        .comment-header-ro { display: flex; align-items: baseline; gap: 0.45rem; margin-bottom: 0.12rem; }
+        .comment-author-ro { font-size: 0.78rem; font-weight: 600; color: #00b7ff; }
+        .comment-date-ro   { font-size: 0.68rem; color: rgba(255,255,255,0.32); }
+        .comment-text-ro   { font-size: 0.82rem; color: rgba(255,255,255,0.68); line-height: 1.45; word-break: break-word; }
+        .comment-empty-ro  { font-size: 0.78rem; color: rgba(255,255,255,0.3); font-style: italic; text-align: center; padding: 0.6rem 0; }
+        .comment-ro-info   { font-size: 0.72rem; color: rgba(255,255,255,0.25); text-align: center; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 0.4rem; }
 
-        /* ── Bouton Commenter (dans la carte manga) ── */
+        /* ── Bouton commentaires ── */
         .comment-toggle-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.4rem;
-            margin-top: 0.4rem !important;
+            margin-top: 0.45rem !important;
             width: 100%;
             padding: 0.4rem 0.75rem;
             font-size: 0.8rem;
             font-weight: 600;
             border-radius: 8px;
-            border: 1px solid rgba(0,183,255,0.25) !important;
-            background: rgba(0,183,255,0.07) !important;
-            color: rgba(0,183,255,0.85) !important;
+            border: 1px solid rgba(0,183,255,0.22) !important;
+            background: rgba(0,183,255,0.06) !important;
+            color: rgba(0,183,255,0.8) !important;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.18s;
             box-shadow: none !important;
         }
         .comment-toggle-btn:hover {
-            border-color: rgba(0,183,255,0.6) !important;
-            background: rgba(0,183,255,0.14) !important;
+            border-color: rgba(0,183,255,0.55) !important;
+            background: rgba(0,183,255,0.13) !important;
             color: #00b7ff !important;
             transform: none !important;
         }
         .comment-toggle-btn.active {
-            background: rgba(0,183,255,0.2) !important;
+            background: rgba(0,183,255,0.18) !important;
             border-color: #00b7ff !important;
             color: #00b7ff !important;
         }
 
-        /* ── Panel commentaires (sous la carte) ── */
-        .comments-panel {
-            display: none;
-            background: rgba(10,14,26,0.96);
-            border: 1px solid rgba(0,183,255,0.25);
-            border-radius: 14px;
-            padding: 1rem 1.1rem;
-            margin-top: 0.4rem;
-            animation: fadeInPanel 0.2s ease;
-        }
-        .comments-panel.open { display: block; }
-
-        @keyframes fadeInPanel {
-            from { opacity: 0; transform: translateY(-6px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .comments-list {
-            max-height: 280px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 0.6rem;
-            margin-bottom: 0.75rem;
-        }
-        .comment-item {
-            display: flex;
-            gap: 0.6rem;
-        }
-        .comment-avatar {
-            width: 28px; height: 28px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #00b7ff, #6c00ff);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.72rem; font-weight: 700; color: #fff;
-            flex-shrink: 0;
-        }
-        .comment-body { flex: 1; min-width: 0; }
-        .comment-header {
-            display: flex;
-            align-items: baseline;
-            gap: 0.5rem;
-            margin-bottom: 0.15rem;
-        }
-        .comment-author { font-size: 0.8rem; font-weight: 600; color: #00b7ff; }
-        .comment-date   { font-size: 0.7rem; color: rgba(255,255,255,0.35); }
-        .comment-del {
-            margin-left: auto;
-            background: none !important; border: none !important;
-            color: rgba(231,76,60,0.45) !important;
-            font-size: 0.72rem !important; padding: 0 !important;
-            cursor: pointer; width: auto !important; box-shadow: none !important;
-            transform: none !important; display: none;
-        }
-        .comment-item.own .comment-del { display: inline; }
-        .comment-del:hover { color: #e74c3c !important; }
-        .comment-text { font-size: 0.83rem; color: rgba(255,255,255,0.7); line-height: 1.5; word-break: break-word; }
-        .comment-empty { font-size: 0.8rem; color: rgba(255,255,255,0.35); font-style: italic; text-align: center; padding: 0.5rem 0; }
-
-        .comment-form {
-            display: flex;
-            gap: 0.5rem;
-            align-items: flex-end;
-            border-top: 1px solid rgba(255,255,255,0.07);
-            padding-top: 0.65rem;
-        }
-        .comment-textarea {
-            flex: 1;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(0,183,255,0.2);
-            border-radius: 8px;
-            color: rgba(255,255,255,0.88);
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.82rem;
-            padding: 0.5rem 0.75rem;
-            resize: none;
-            height: 56px;
-            outline: none;
-            transition: border-color 0.2s;
-            width: auto; margin: 0;
-        }
-        .comment-textarea:focus { border-color: #00b7ff; }
-        .comment-send {
-            padding: 0.5rem 0.85rem !important;
-            font-size: 0.8rem !important;
-            align-self: flex-end;
-            flex-shrink: 0;
-        }
-
-        /* ── Modal Top 3 ── */
-        .top3-select-slot { margin-bottom: 0.7rem; }
-        .top3-select-slot label {
-            font-size: 0.78rem;
-            color: rgba(255,255,255,0.55);
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 0.2rem;
-        }
-
-        /* Thème clair */
-        body.theme-light .top3-card { background: rgba(255,255,255,0.8); border-color: rgba(0,100,180,0.2); }
-        body.theme-light .top3-user-header { background: rgba(108,0,255,0.05); }
-        body.theme-light .top3-username { color: #1a1f2e; }
-        body.theme-light .top3-username small { color: #888; }
-        body.theme-light .top3-info strong { color: #1a1f2e; }
-        body.theme-light .top3-empty { color: #aaa; }
-        body.theme-light .comments-panel { background: rgba(255,255,255,0.95); border-color: rgba(0,100,180,0.2); }
-        body.theme-light .comment-text { color: #2d3548; }
-        body.theme-light .comment-date { color: #aaa; }
-        body.theme-light .comment-empty { color: #aaa; }
-        body.theme-light .comment-textarea { background: rgba(0,0,0,0.05); border-color: rgba(0,100,180,0.2); color: #1a1f2e; }
-        body.theme-light .comment-textarea:focus { border-color: #0066aa; }
-        body.theme-light .comment-toggle-btn { border-color: rgba(0,100,180,0.25) !important; background: rgba(0,100,180,0.06) !important; color: #0066aa !important; }
+        /* ── Thème clair ── */
+        body.theme-light .top3-user-block,
+        body.theme-light .my-top3-block { background: rgba(255,255,255,0.85); border-color: rgba(0,100,180,0.2); }
+        body.theme-light .top3-user-header,
+        body.theme-light .my-top3-header { background: rgba(0,100,180,0.05); border-color: rgba(0,100,180,0.12); }
+        body.theme-light .top3-username, body.theme-light .top3-info strong { color: #1a1f2e; }
+        body.theme-light .top3-username small, body.theme-light .top3-empty-inline { color: #aaa; }
+        body.theme-light .comments-readonly-panel { background: rgba(255,255,255,0.96); border-color: rgba(0,100,180,0.18); }
+        body.theme-light .comment-text-ro { color: #2d3548; }
+        body.theme-light .comment-author-ro { color: #0066aa; }
+        body.theme-light .comment-date-ro { color: #aaa; }
+        body.theme-light .comment-empty-ro, body.theme-light .comment-ro-info { color: #bbb; }
+        body.theme-light .comment-toggle-btn { border-color: rgba(0,100,180,0.22) !important; background: rgba(0,100,180,0.05) !important; color: #0066aa !important; }
         body.theme-light .comment-toggle-btn:hover, body.theme-light .comment-toggle-btn.active { border-color: #0066aa !important; color: #0066aa !important; }
-        body.theme-light .section-title h2 { color: rgba(0,0,0,0.4); }
-        body.theme-light .section-title h2 span { color: #0066aa; }
-        body.theme-light .section-line { background: linear-gradient(90deg, rgba(0,100,180,0.3), transparent); }
     </style>
 </head>
 <body>
@@ -302,82 +183,30 @@
 <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
 <h1>🌐 Galerie publique</h1>
-<p class="gallery-subtitle">Top 3 des membres · Tous les mangas partagés</p>
+<p class="gallery-subtitle">Découvre les mangas des autres utilisateurs et copie ceux qui t'intéressent dans ta liste.</p>
 
 <a href="{{ url_for('index') }}" class="back-link">← Retour à ma liste</a>
 
-<!-- ═══════════════════════════════════════════════════════
-     SECTION TOP 3
-═══════════════════════════════════════════════════════ -->
-<div class="section-title">
-    <h2>🏆 Top 3 des <span>membres</span></h2>
-    <div class="section-line"></div>
-    <button class="button btn-top3" onclick="openTop3Modal()">
-        <i class="fas fa-trophy"></i> Mon Top 3
+<!-- ── Barre d'actions ── -->
+<div style="display:flex; gap:0.6rem; align-items:center; margin: 0.5rem 0 0; width:90%; max-width:900px; flex-wrap:wrap;">
+    <button class="button" id="btn-open-top3" style="font-size:0.85rem; padding:0.5rem 1rem;">
+        🏆 Top 3 des utilisateurs
     </button>
-</div>
-
-{% if top3_users %}
-<div class="top3-grid">
-    {% for user in top3_users %}
-    <div class="top3-card">
-        <div class="top3-user-header">
-            <div class="top3-avatar">{{ user.username[0].upper() }}</div>
-            <div class="top3-username">
-                {{ user.username }}
-                <small>{{ user.mangas|length }} manga{{ 's' if user.mangas|length > 1 else '' }}</small>
-            </div>
-        </div>
-        <div class="top3-manga-list">
-            {% for m in user.mangas %}
-            <div class="top3-manga-item">
-                <div class="top3-rank r{{ m.rank }}">
-                    {% if m.rank == 1 %}🥇{% elif m.rank == 2 %}🥈{% else %}🥉{% endif %}
-                </div>
-                <img class="top3-cover"
-                     src="{{ m.image }}" alt="{{ m.nom }}" loading="lazy"
-                     onerror="this.onerror=null;this.classList.add('img-fallback');this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
-                <div class="top3-info">
-                    <strong title="{{ m.nom }}">{{ m.nom }}</strong>
-                    <div class="top3-stars">
-                        {% for i in range(1,6) %}{% if i <= m.note %}★{% else %}☆{% endif %}{% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+    <div style="margin-left:auto;">
+        <button type="button" id="theme-btn" class="theme-btn" title="Thème clair / sombre">☀</button>
     </div>
-    {% endfor %}
-</div>
-{% else %}
-<div class="empty-state" style="margin: 0 auto;">
-    <div class="empty-state-icon">🏆</div>
-    <h2>Aucun Top 3 encore</h2>
-    <p>Sois le premier à afficher ton top 3 !</p>
-    <button class="button" onclick="openTop3Modal()">Définir mon Top 3</button>
-</div>
-{% endif %}
-
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION TOUS LES MANGAS
-═══════════════════════════════════════════════════════ -->
-<div class="section-title" style="margin-top: 3rem;">
-    <h2>📚 Tous les <span>mangas</span></h2>
-    <div class="section-line"></div>
 </div>
 
-<form method="GET" action="{{ url_for('galerie') }}" class="filter-form">
+<!-- ── Filtres ── -->
+<form method="GET" action="{{ url_for('galerie') }}" class="filter-form" style="margin-top:0.75rem;">
     <label for="search">Rechercher</label>
     <input type="text" id="search" name="search" value="{{ request.args.get('search', '') }}" placeholder="Nom du manga…">
-
     <label for="filter-fini">Statut</label>
     <select id="filter-fini" name="filter_fini">
         <option value="">Tous</option>
         <option value="oui" {% if request.args.get('filter_fini') == 'oui' %}selected{% endif %}>Terminés</option>
         <option value="non" {% if request.args.get('filter_fini') == 'non' %}selected{% endif %}>En cours</option>
     </select>
-
     <label for="filter-note">Note min.</label>
     <select id="filter-note" name="filter_note">
         <option value="">Toutes</option>
@@ -385,23 +214,19 @@
         <option value="{{ i }}" {% if request.args.get('filter_note') == i|string %}selected{% endif %}>{{ i }} ★</option>
         {% endfor %}
     </select>
-
     <button type="submit">Filtrer</button>
     <a href="{{ url_for('galerie') }}" class="button button-outline">Réinitialiser</a>
 </form>
 
 <p class="results-count">{{ mangas|length }} manga{{ 's' if mangas|length != 1 else '' }} dans la galerie</p>
 
-<div class="gallery-toolbar">
-    <button type="button" id="theme-btn" class="theme-btn" title="Thème clair / sombre">☀</button>
-</div>
-
+<!-- ── Grille mangas ── -->
 <div class="manga-cards" id="manga-cards">
     {% if not mangas %}
     <div class="empty-state">
         <div class="empty-state-icon">🔍</div>
         <h2>Aucun manga dans la galerie</h2>
-        <p>Aucun manga ne correspond à ta recherche, ou les autres utilisateurs n'en ont pas encore ajouté.</p>
+        <p>Les autres utilisateurs n'ont pas encore partagé de mangas, ou aucun ne correspond à ta recherche.</p>
         <a href="{{ url_for('index') }}" class="button">Retour à ma liste</a>
     </div>
     {% else %}
@@ -416,7 +241,6 @@
             <p>Saison : {{ manga.saison }}</p>
             <p>Statut : <span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
             <p>Note : {% for i in range(1, 6) %}{% if i <= manga.note %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</p>
-
             {% if manga.already_have %}
             <button class="copy-card-btn already-have" disabled>✅ Déjà dans ta liste</button>
             {% else %}
@@ -424,26 +248,18 @@
                 <i class="fas fa-copy"></i> Copier dans ma liste
             </button>
             {% endif %}
-
-            <button class="comment-toggle-btn" onclick="toggleComments({{ manga.id }}, this)">
-                <i class="fas fa-comment"></i> Commentaires
-                <span class="nb-comments" id="nb-{{ manga.id }}"></span>
+            <!-- Bouton commentaires lecture seule -->
+            <button class="comment-toggle-btn" onclick="toggleReadComments({{ manga.id }}, this)">
+                <i class="fas fa-comment"></i>
+                <span id="nb-{{ manga.id }}">Commentaires</span>
             </button>
         </div>
-
-        <!-- Panel commentaires, caché par défaut -->
-        <div class="comments-panel" id="panel-{{ manga.id }}">
-            <div class="comments-list" id="list-{{ manga.id }}">
-                <p class="comment-empty">Chargement…</p>
+        <!-- Panel commentaires lecture seule -->
+        <div class="comments-readonly-panel" id="ropanel-{{ manga.id }}">
+            <div class="comments-readonly-list" id="rolist-{{ manga.id }}">
+                <p class="comment-empty-ro">Chargement…</p>
             </div>
-            <div class="comment-form">
-                <textarea class="comment-textarea" id="input-{{ manga.id }}"
-                          placeholder="Ajoute un commentaire…" maxlength="1000"
-                          onkeydown="handleKey(event, {{ manga.id }})"></textarea>
-                <button class="button comment-send" onclick="sendComment({{ manga.id }})">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
+            <p class="comment-ro-info">Les commentaires se gèrent depuis ta propre liste.</p>
         </div>
     </div>
     {% endfor %}
@@ -452,63 +268,137 @@
 
 
 <!-- ═══════════════════════════════════════════════════════
-     MODAL MON TOP 3
+     MODAL TOP 3 DES UTILISATEURS
 ═══════════════════════════════════════════════════════ -->
 <div id="top3-overlay" class="modal-overlay" aria-hidden="true">
-    <div class="modal add-manga-modal" style="width:420px;">
+    <div class="modal top3-modal-inner">
         <span class="modal-close" onclick="closeTop3Modal()">✕</span>
         <div class="add-manga-header">
             <span class="add-manga-icon">🏆</span>
-            <h2>Mon Top 3</h2>
-            <p>Choisis tes 3 mangas préférés — ils apparaîtront dans la galerie.</p>
+            <h2>Top 3 des utilisateurs</h2>
+            <p>Consulte les coups de cœur de la communauté et définis le tien.</p>
         </div>
-        <div class="form-add-manga">
-            <div class="top3-select-slot">
-                <label>🥇 Rang 1</label>
-                <select id="slot-1">
-                    <option value="">— Choisir —</option>
-                    {% for m in my_mangas %}
-                    <option value="{{ m.id }}" {% if my_top3.get(1) and my_top3[1].id == m.id %}selected{% endif %}>
-                        {{ m.nom }}{% if m.note %} ({{ m.note }}★){% endif %}
-                    </option>
-                    {% endfor %}
-                </select>
+
+        <div class="top3-modal-body">
+
+            <!-- ── Mon Top 3 (éditable) ── -->
+            <div class="my-top3-block" id="my-top3-block">
+                <div class="my-top3-header">
+                    <div class="my-top3-title">
+                        Ton Top 3
+                        <small>Visible par tous les utilisateurs</small>
+                    </div>
+                    <button class="button btn-edit-top3" id="btn-toggle-edit" onclick="toggleEditMode()">
+                        <i class="fas fa-pen"></i> Modifier
+                    </button>
+                </div>
+
+                <!-- Vue lecture de son propre top3 -->
+                <div id="my-top3-view">
+                    {% if my_top3 %}
+                    <div class="top3-manga-list">
+                        {% for rank in [1,2,3] %}{% if my_top3.get(rank) %}
+                        <div class="top3-manga-item">
+                            <div class="top3-rank r{{ rank }}">{% if rank==1 %}🥇{% elif rank==2 %}🥈{% else %}🥉{% endif %}</div>
+                            <div class="top3-info">
+                                <strong>{{ my_top3[rank].nom }}</strong>
+                            </div>
+                        </div>
+                        {% endif %}{% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="top3-empty-inline" style="padding: 0.75rem 1rem;">Tu n'as pas encore défini ton Top 3. Clique sur « Modifier » !</p>
+                    {% endif %}
+                </div>
+
+                <!-- Formulaire d'édition (caché par défaut) -->
+                <div id="my-top3-edit" style="display:none;">
+                    <div class="my-top3-selects">
+                        <div class="top3-slot-row">
+                            <div class="top3-slot-rank r1">🥇</div>
+                            <select id="slot-1">
+                                <option value="">— Choisir —</option>
+                                {% for m in my_mangas %}
+                                <option value="{{ m.id }}" {% if my_top3.get(1) and my_top3[1].id == m.id %}selected{% endif %}>
+                                    {{ m.nom }}{% if m.note %} ({{ m.note }}★){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="top3-slot-row">
+                            <div class="top3-slot-rank r2">🥈</div>
+                            <select id="slot-2">
+                                <option value="">— Choisir —</option>
+                                {% for m in my_mangas %}
+                                <option value="{{ m.id }}" {% if my_top3.get(2) and my_top3[2].id == m.id %}selected{% endif %}>
+                                    {{ m.nom }}{% if m.note %} ({{ m.note }}★){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="top3-slot-row">
+                            <div class="top3-slot-rank r3">🥉</div>
+                            <select id="slot-3">
+                                <option value="">— Choisir —</option>
+                                {% for m in my_mangas %}
+                                <option value="{{ m.id }}" {% if my_top3.get(3) and my_top3[3].id == m.id %}selected{% endif %}>
+                                    {{ m.nom }}{% if m.note %} ({{ m.note }}★){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="my-top3-actions">
+                        <button class="button button-outline" onclick="toggleEditMode()">Annuler</button>
+                        <button class="button btn-submit-add" onclick="saveTop3()">
+                            <i class="fas fa-save"></i> Sauvegarder
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="top3-select-slot">
-                <label>🥈 Rang 2</label>
-                <select id="slot-2">
-                    <option value="">— Choisir —</option>
-                    {% for m in my_mangas %}
-                    <option value="{{ m.id }}" {% if my_top3.get(2) and my_top3[2].id == m.id %}selected{% endif %}>
-                        {{ m.nom }}{% if m.note %} ({{ m.note }}★){% endif %}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="top3-select-slot">
-                <label>🥉 Rang 3</label>
-                <select id="slot-3">
-                    <option value="">— Choisir —</option>
-                    {% for m in my_mangas %}
-                    <option value="{{ m.id }}" {% if my_top3.get(3) and my_top3[3].id == m.id %}selected{% endif %}>
-                        {{ m.nom }}{% if m.note %} ({{ m.note }}★){% endif %}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-add-actions">
-                <button class="button button-outline" onclick="closeTop3Modal()">Annuler</button>
-                <button class="button btn-submit-add" onclick="saveTop3()">
-                    <i class="fas fa-save"></i> Sauvegarder
-                </button>
-            </div>
-        </div>
+
+            <!-- ── Top 3 des autres utilisateurs ── -->
+            {% if top3_users %}
+                {% for user in top3_users %}
+                <div class="top3-user-block">
+                    <div class="top3-user-header">
+                        <div class="top3-avatar">{{ user.username[0].upper() }}</div>
+                        <div class="top3-username">
+                            {{ user.username }}
+                            <small>{{ user.mangas|length }} manga{{ 's' if user.mangas|length > 1 else '' }} dans son top</small>
+                        </div>
+                    </div>
+                    <div class="top3-manga-list">
+                        {% for m in user.mangas %}
+                        <div class="top3-manga-item">
+                            <div class="top3-rank r{{ m.rank }}">
+                                {% if m.rank == 1 %}🥇{% elif m.rank == 2 %}🥈{% else %}🥉{% endif %}
+                            </div>
+                            <img class="top3-cover"
+                                 src="{{ m.image }}" alt="{{ m.nom }}" loading="lazy"
+                                 onerror="this.onerror=null;this.classList.add('img-fallback');this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
+                            <div class="top3-info">
+                                <strong title="{{ m.nom }}">{{ m.nom }}</strong>
+                                <div class="top3-stars">{% for i in range(1,6) %}{% if i <= m.note %}★{% else %}☆{% endif %}{% endfor %}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="top3-empty-inline" style="text-align:center; padding: 1rem 0;">
+                    Aucun autre utilisateur n'a encore défini son Top 3.
+                </p>
+            {% endif %}
+
+        </div><!-- /top3-modal-body -->
     </div>
 </div>
 
 
 <script>
-/* ── Toast ─────────────────────────────────────────── */
+/* ── Toast ─────────────────────────────────────────────── */
 function showToast(msg, type) {
     type = type || 'success';
     var c = document.getElementById('toast-container');
@@ -520,7 +410,7 @@ function showToast(msg, type) {
     setTimeout(function() { t.classList.remove('show'); setTimeout(function() { t.remove(); }, 300); }, 2800);
 }
 
-/* ── Thème ─────────────────────────────────────────── */
+/* ── Thème ─────────────────────────────────────────────── */
 var themeKey = 'manga-theme';
 var themeBtn = document.getElementById('theme-btn');
 function applyTheme(light) {
@@ -532,7 +422,7 @@ function applyTheme(light) {
 try { applyTheme(localStorage.getItem(themeKey) === 'light'); } catch(e) {}
 themeBtn.addEventListener('click', function() { applyTheme(!document.body.classList.contains('theme-light')); });
 
-/* ── Copier carte ──────────────────────────────────── */
+/* ── Copier carte ──────────────────────────────────────── */
 function copierCarte(id, btn) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Copie…';
@@ -556,140 +446,99 @@ function copierCarte(id, btn) {
         });
 }
 
-/* ── Commentaires ──────────────────────────────────── */
-var loadedPanels = {}; // manga_id -> true si déjà chargé
+/* ── Commentaires lecture seule ────────────────────────── */
+var roLoaded = {};
 
-function toggleComments(mangaId, btn) {
-    var panel = document.getElementById('panel-' + mangaId);
-    var isOpen = panel.classList.contains('open');
-    if (isOpen) {
+function toggleReadComments(mangaId, btn) {
+    var panel = document.getElementById('ropanel-' + mangaId);
+    var open  = panel.classList.contains('open');
+    if (open) {
         panel.classList.remove('open');
         btn.classList.remove('active');
     } else {
         panel.classList.add('open');
         btn.classList.add('active');
-        if (!loadedPanels[mangaId]) {
-            loadComments(mangaId);
+        if (!roLoaded[mangaId]) {
+            loadReadComments(mangaId);
         }
     }
 }
 
-function loadComments(mangaId) {
-    var list = document.getElementById('list-' + mangaId);
-    list.innerHTML = '<p class="comment-empty">Chargement…</p>';
+function loadReadComments(mangaId) {
+    var list = document.getElementById('rolist-' + mangaId);
     fetch('/commentaires/' + mangaId)
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            loadedPanels[mangaId] = true;
-            renderComments(mangaId, data);
+            roLoaded[mangaId] = true;
+            var nb = document.getElementById('nb-' + mangaId);
+            if (!Array.isArray(data) || data.length === 0) {
+                list.innerHTML = '<p class="comment-empty-ro">Aucun commentaire pour l\'instant.</p>';
+                if (nb) nb.textContent = 'Commentaires';
+                return;
+            }
+            if (nb) nb.textContent = 'Commentaires (' + data.length + ')';
+            list.innerHTML = '';
+            data.forEach(function(c) {
+                var item = document.createElement('div');
+                item.className = 'comment-item-ro';
+                item.innerHTML =
+                    '<div class="comment-avatar-ro">' + esc(c.username[0].toUpperCase()) + '</div>' +
+                    '<div class="comment-body-ro">' +
+                      '<div class="comment-header-ro">' +
+                        '<span class="comment-author-ro">' + esc(c.username) + '</span>' +
+                        '<span class="comment-date-ro">' + esc(c.created_at) + '</span>' +
+                      '</div>' +
+                      '<div class="comment-text-ro">' + esc(c.texte) + '</div>' +
+                    '</div>';
+                list.appendChild(item);
+            });
         })
         .catch(function() {
-            list.innerHTML = '<p class="comment-empty">Erreur de chargement.</p>';
+            document.getElementById('rolist-' + mangaId).innerHTML = '<p class="comment-empty-ro">Erreur de chargement.</p>';
         });
 }
 
-function renderComments(mangaId, data) {
-    var list = document.getElementById('list-' + mangaId);
-    var nb   = document.getElementById('nb-' + mangaId);
-    if (nb) nb.textContent = data.length ? ' (' + data.length + ')' : '';
-
-    if (!data.length) {
-        list.innerHTML = '<p class="comment-empty">Aucun commentaire. Sois le premier !</p>';
-        return;
-    }
-    list.innerHTML = '';
-    data.forEach(function(c) {
-        var item = document.createElement('div');
-        item.className = 'comment-item' + (c.is_mine ? ' own' : '');
-        item.dataset.id = c.id;
-        item.innerHTML =
-            '<div class="comment-avatar">' + esc(c.username[0].toUpperCase()) + '</div>' +
-            '<div class="comment-body">' +
-              '<div class="comment-header">' +
-                '<span class="comment-author">' + esc(c.username) + '</span>' +
-                '<span class="comment-date">' + esc(c.created_at) + '</span>' +
-                '<button class="comment-del" onclick="delComment(' + c.id + ',' + mangaId + ')" title="Supprimer"><i class="fas fa-trash-alt"></i></button>' +
-              '</div>' +
-              '<div class="comment-text">' + esc(c.texte) + '</div>' +
-            '</div>';
-        list.appendChild(item);
-    });
-}
-
-function sendComment(mangaId) {
-    var input = document.getElementById('input-' + mangaId);
-    var texte = input.value.trim();
-    if (!texte) return;
-    fetch('/commentaires/' + mangaId, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({texte: texte})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.ok) {
-            input.value = '';
-            loadComments(mangaId);
-        } else {
-            showToast(data.erreur || 'Erreur', 'error');
-        }
-    })
-    .catch(function() { showToast('Erreur réseau', 'error'); });
-}
-
-function delComment(commentId, mangaId) {
-    if (!confirm('Supprimer ce commentaire ?')) return;
-    fetch('/commentaires/delete/' + commentId, {method: 'POST'})
-        .then(function(r) { return r.json(); })
-        .then(function(d) { if (d.ok) loadComments(mangaId); })
-        .catch(function() { showToast('Erreur', 'error'); });
-}
-
-function handleKey(e, mangaId) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComment(mangaId); }
-}
-
 function esc(str) {
-    return String(str)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Précharger les compteurs de commentaires au chargement
-document.querySelectorAll('[id^="nb-"]').forEach(function(el) {
-    var mangaId = el.id.replace('nb-', '');
-    fetch('/commentaires/' + mangaId)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (Array.isArray(data) && data.length) {
-                el.textContent = ' (' + data.length + ')';
-            }
-        }).catch(function() {});
-});
-
-/* ── Modal Top 3 ───────────────────────────────────── */
-function openTop3Modal() {
+/* ── Modal Top 3 ───────────────────────────────────────── */
+document.getElementById('btn-open-top3').addEventListener('click', function() {
     document.getElementById('top3-overlay').classList.add('show');
-}
+});
 function closeTop3Modal() {
     document.getElementById('top3-overlay').classList.remove('show');
+    // Repasser en mode vue si on était en mode édition
+    document.getElementById('my-top3-edit').style.display = 'none';
+    document.getElementById('my-top3-view').style.display = '';
+    document.getElementById('btn-toggle-edit').innerHTML = '<i class="fas fa-pen"></i> Modifier';
 }
+document.getElementById('top3-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeTop3Modal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeTop3Modal();
+});
+
+var editMode = false;
+function toggleEditMode() {
+    editMode = !editMode;
+    document.getElementById('my-top3-edit').style.display = editMode ? '' : 'none';
+    document.getElementById('my-top3-view').style.display = editMode ? 'none' : '';
+    document.getElementById('btn-toggle-edit').innerHTML = editMode
+        ? '<i class="fas fa-eye"></i> Voir'
+        : '<i class="fas fa-pen"></i> Modifier';
+}
+
 function saveTop3() {
     var ids = [
         document.getElementById('slot-1').value,
         document.getElementById('slot-2').value,
         document.getElementById('slot-3').value
     ].filter(function(v) { return v !== ''; });
-
-    if (ids.length === 0) {
-        showToast('Sélectionne au moins un manga.', 'error');
-        return;
-    }
+    if (ids.length === 0) { showToast('Sélectionne au moins un manga.', 'error'); return; }
     var nums = ids.map(Number);
-    if (new Set(nums).size !== nums.length) {
-        showToast('Tu as sélectionné le même manga deux fois.', 'error');
-        return;
-    }
+    if (new Set(nums).size !== nums.length) { showToast('Même manga sélectionné deux fois.', 'error'); return; }
     fetch('/top3', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -698,22 +547,15 @@ function saveTop3() {
     .then(function(r) { return r.json(); })
     .then(function(d) {
         if (d.ok) {
-            closeTop3Modal();
             showToast('Top 3 sauvegardé !');
-            setTimeout(function() { location.reload(); }, 900);
+            closeTop3Modal();
+            setTimeout(function() { location.reload(); }, 800);
         } else {
             showToast(d.erreur || 'Erreur', 'error');
         }
     })
     .catch(function() { showToast('Erreur réseau', 'error'); });
 }
-
-document.getElementById('top3-overlay').addEventListener('click', function(e) {
-    if (e.target === this) closeTop3Modal();
-});
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeTop3Modal();
-});
 </script>
 
 </body>

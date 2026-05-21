@@ -398,9 +398,8 @@ def stats():
         "moyenne": moyenne, "meilleur_nom": meilleur_nom, "meilleur_note": meilleur_note
     })
 
-# ── Galerie publique ───────────────────────────────────────────────────────────
+# ── Community tables ──────────────────────────────────────────────────────────
 def ensure_community_tables():
-    """Crée les tables top3 et commentaires si elles n'existent pas."""
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -422,7 +421,7 @@ def ensure_community_tables():
     cur.close()
     conn.close()
 
-
+# ── Galerie publique ───────────────────────────────────────────────────────────
 @app.route('/galerie')
 def galerie():
     if 'user_id' not in session:
@@ -437,14 +436,12 @@ def galerie():
     conn = get_db_connection()
     cur  = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Tous les mangas des autres utilisateurs
-    cur.execute('''
-        SELECT m.*, u.username AS owner
-        FROM mangas m
-        JOIN users u ON m.user_id = u.id
-        WHERE m.user_id != %s
-        ORDER BY m.nom
-    ''', (session['user_id'],))
+    cur.execute(
+        "SELECT m.*, u.username AS owner FROM mangas m"
+        " JOIN users u ON m.user_id = u.id"
+        " WHERE m.user_id != %s ORDER BY m.nom",
+        (session['user_id'],)
+    )
     all_mangas = cur.fetchall()
 
     cur.execute("SELECT nom FROM mangas WHERE user_id = %s", (session['user_id'],))
@@ -463,15 +460,15 @@ def galerie():
     elif filter_fini == 'non':
         all_mangas = [m for m in all_mangas if not m['fini']]
 
-    # Top 3 par utilisateur
-    cur.execute("""
-        SELECT t.rank, t.user_id, u.username,
-               m.id AS manga_id, m.nom, m.image, m.note, m.genres, m.fini
-        FROM top3 t
-        JOIN users u ON t.user_id = u.id
-        JOIN mangas m ON t.manga_id = m.id
-        ORDER BY u.username, t.rank
-    """)
+    # Top 3 de tous les utilisateurs
+    cur.execute(
+        "SELECT t.rank, t.user_id, u.username,"
+        " m.id AS manga_id, m.nom, m.image, m.note, m.genres, m.fini"
+        " FROM top3 t"
+        " JOIN users u ON t.user_id = u.id"
+        " JOIN mangas m ON t.manga_id = m.id"
+        " ORDER BY u.username, t.rank"
+    )
     top3_rows = cur.fetchall()
     top3_by_user = {}
     for row in top3_rows:
@@ -483,16 +480,16 @@ def galerie():
         top3_by_user[uid]['mangas'].append(d)
     top3_users = list(top3_by_user.values())
 
-    # Mangas de l'utilisateur courant (pour le sélecteur Top 3)
+    # Mangas + top3 de l'utilisateur courant (pour le sélecteur modal)
     cur.execute("SELECT id, nom, note FROM mangas WHERE user_id = %s ORDER BY nom", (session['user_id'],))
     my_mangas = cur.fetchall()
 
-    # Top 3 actuel de l'utilisateur courant
-    cur.execute("""
-        SELECT t.rank, m.id, m.nom
-        FROM top3 t JOIN mangas m ON t.manga_id = m.id
-        WHERE t.user_id = %s ORDER BY t.rank
-    """, (session['user_id'],))
+    cur.execute(
+        "SELECT t.rank, m.id, m.nom FROM top3 t"
+        " JOIN mangas m ON t.manga_id = m.id"
+        " WHERE t.user_id = %s ORDER BY t.rank",
+        (session['user_id'],)
+    )
     my_top3 = {row['rank']: row for row in cur.fetchall()}
 
     cur.close()
@@ -506,7 +503,7 @@ def galerie():
                            current_user_id=session['user_id'])
 
 
-# ── Top 3 (sauvegarde) ─────────────────────────────────────────────────────────
+# ── Top 3 sauvegarde ───────────────────────────────────────────────────────────
 @app.route('/top3', methods=['POST'])
 def save_top3():
     if 'user_id' not in session:
@@ -519,10 +516,8 @@ def save_top3():
     cur  = conn.cursor()
     cur.execute("DELETE FROM top3 WHERE user_id = %s", (session['user_id'],))
     for rank, manga_id in enumerate(ids[:3], start=1):
-        cur.execute(
-            "INSERT INTO top3 (user_id, manga_id, rank) VALUES (%s, %s, %s)",
-            (session['user_id'], manga_id, rank)
-        )
+        cur.execute("INSERT INTO top3 (user_id, manga_id, rank) VALUES (%s, %s, %s)",
+                    (session['user_id'], manga_id, rank))
     conn.commit()
     cur.close()
     conn.close()
@@ -532,17 +527,17 @@ def save_top3():
 # ── Commentaires ───────────────────────────────────────────────────────────────
 @app.route('/commentaires/<int:manga_id>', methods=['GET'])
 def get_commentaires(manga_id):
+    """Lecture accessible pour n'importe quel manga."""
     if 'user_id' not in session:
         return jsonify({"erreur": "Non autorisé"}), 403
     conn = get_db_connection()
     cur  = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute("""
-        SELECT c.id, c.texte, c.created_at, u.username, c.user_id
-        FROM commentaires c
-        JOIN users u ON c.user_id = u.id
-        WHERE c.manga_id = %s
-        ORDER BY c.created_at DESC
-    """, (manga_id,))
+    cur.execute(
+        "SELECT c.id, c.texte, c.created_at, u.username, c.user_id"
+        " FROM commentaires c JOIN users u ON c.user_id = u.id"
+        " WHERE c.manga_id = %s ORDER BY c.created_at DESC",
+        (manga_id,)
+    )
     rows = cur.fetchall()
     cur.close()
     conn.close()
@@ -557,21 +552,27 @@ def get_commentaires(manga_id):
 
 @app.route('/commentaires/<int:manga_id>', methods=['POST'])
 def post_commentaire(manga_id):
+    """Écriture uniquement sur ses propres mangas."""
     if 'user_id' not in session:
+        return jsonify({"erreur": "Non autorisé"}), 403
+    conn = get_db_connection()
+    cur  = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT id FROM mangas WHERE id=%s AND user_id=%s", (manga_id, session['user_id']))
+    if not cur.fetchone():
+        cur.close(); conn.close()
         return jsonify({"erreur": "Non autorisé"}), 403
     texte = (request.get_json(force=True).get('texte') or '').strip()
     if not texte or len(texte) > 1000:
+        cur.close(); conn.close()
         return jsonify({"erreur": "Texte invalide"}), 400
-    conn = get_db_connection()
-    cur  = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute(
-        "INSERT INTO commentaires (manga_id, user_id, texte, created_at) VALUES (%s, %s, %s, %s) RETURNING id, created_at",
+        "INSERT INTO commentaires (manga_id, user_id, texte, created_at)"
+        " VALUES (%s,%s,%s,%s) RETURNING id, created_at",
         (manga_id, session['user_id'], texte, datetime.now().date())
     )
     row = cur.fetchone()
     conn.commit()
-    cur.close()
-    conn.close()
+    cur.close(); conn.close()
     return jsonify({"ok": True, "id": row['id'], "created_at": str(row['created_at'])[:10]})
 
 
@@ -583,9 +584,9 @@ def delete_commentaire(comment_id):
     cur  = conn.cursor()
     cur.execute("DELETE FROM commentaires WHERE id=%s AND user_id=%s", (comment_id, session['user_id']))
     conn.commit()
-    cur.close()
-    conn.close()
+    cur.close(); conn.close()
     return jsonify({"ok": True})
+
 
 
 @app.route('/copier/<int:id>', methods=['POST'])
