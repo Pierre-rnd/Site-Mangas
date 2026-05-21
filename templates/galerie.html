@@ -80,18 +80,28 @@
         .my-top3-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-            padding: 0.8rem 1rem;
-            border-bottom: 1px solid rgba(0,183,255,0.15);
-            background: linear-gradient(90deg, rgba(0,183,255,0.1), transparent);
+            justify-content: center;
+            position: relative;
+            margin-bottom: 1rem;
         }
-        .my-top3-title { font-weight: 700; font-size: 0.9rem; color: #00b7ff; }
-        .my-top3-title small { display: block; font-size: 0.7rem; color: rgba(255,255,255,0.4); font-weight: 400; }
+        .my-top3-title {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        .my-top3-title small {
+            display: block;
+            font-size: 0.8rem;
+            margin-top: 0.2rem;
+            opacity: 0.7;
+        }        
         .btn-edit-top3 {
-            font-size: 0.78rem !important;
-            padding: 0.35rem 0.8rem !important;
-            flex-shrink: 0;
+            position: absolute;
+            right: 0;
+
+            padding: 0.35rem 0.7rem;
+            font-size: 0.8rem;
+            border-radius: 8px;
         }
         .my-top3-selects { padding: 0.85rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.55rem; }
         .top3-slot-row { display: grid; grid-template-columns: 30px 1fr; gap: 0.6rem; align-items: center; }
@@ -188,7 +198,7 @@
 <a href="{{ url_for('index') }}" class="back-link">← Retour à ma liste</a>
 
 <!-- ── Barre d'actions ── -->
-<div style="display:flex; gap:0.6rem; align-items:center; margin: 0.5rem 0 0; width:90%; max-width:900px; flex-wrap:wrap;">
+<div style="display:flex;align-items:center; max-width:900px; flex-wrap:wrap;">
     <button class="button" id="btn-open-top3" style="font-size:0.85rem; padding:0.5rem 1rem;">
         🏆 Top 3 des utilisateurs
     </button>
