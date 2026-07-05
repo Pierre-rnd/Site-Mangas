@@ -503,59 +503,6 @@ body.theme-light .comment-author { color: #0055aa; }
   }
   try { var t = localStorage.getItem(themeKey); applyTheme(t === 'light'); } catch (e) {}
   themeBtn.addEventListener('click', function() { applyTheme(!document.body.classList.contains('theme-light')); });
-
-  // ── Pagination fluide (sans rechargement de page) ──────────────────────
-  var resultsWrapper = document.getElementById('results-wrapper');
-
-  function reapplySavedView() {
-    var cards = document.getElementById('manga-cards');
-    if (!cards) return;
-    var saved = null;
-    try { saved = localStorage.getItem(viewKey); } catch (e) {}
-    cards.classList.toggle('view-list', saved === 'list');
-  }
-
-  function loadPage(pageNum) {
-    var params = new URLSearchParams(window.location.search);
-    params.set('page', pageNum);
-    var pageUrl = window.location.pathname + '?' + params.toString();
-
-    resultsWrapper.classList.add('loading');
-    fetch(pageUrl + '&ajax=1')
-      .then(function(r) { return r.text(); })
-      .then(function(html) {
-        resultsWrapper.innerHTML = html;
-        resultsWrapper.classList.remove('loading');
-        reapplySavedView();
-        window.history.pushState({ page: pageNum }, '', pageUrl);
-        resultsWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      })
-      .catch(function() {
-        // En cas d'échec réseau, on retombe sur un chargement classique
-        window.location.href = pageUrl;
-      });
-  }
-
-  // Délégation d'événement : les boutons de pagination sont recréés à
-  // chaque changement de page, donc on écoute sur le conteneur stable.
-  resultsWrapper.addEventListener('click', function(e) {
-    var btn = e.target.closest('.page-nav-btn');
-    if (!btn || btn.disabled) return;
-    e.preventDefault();
-    loadPage(parseInt(btn.getAttribute('data-page'), 10));
-  });
-
-  // Navigation avec les boutons précédent/suivant du navigateur
-  window.addEventListener('popstate', function() {
-    var params = new URLSearchParams(window.location.search);
-    var pageUrl = window.location.pathname + '?' + params.toString();
-    fetch(pageUrl + (params.toString() ? '&' : '?') + 'ajax=1')
-      .then(function(r) { return r.text(); })
-      .then(function(html) {
-        resultsWrapper.innerHTML = html;
-        reapplySavedView();
-      });
-  });
 </script>
 
 <script>
