@@ -210,6 +210,14 @@ body.theme-light .comment-author { color: #0055aa; }
             {% endfor %}
         </select>
 
+        <label for="filter-collection">Collection</label>
+        <select id="filter-collection" name="filter_collection">
+            <option value="">Toutes les collections</option>
+            {% for c in collections_disponibles %}
+            <option value="{{ c.nom }}" {% if filter_collection == c.nom %}selected{% endif %}>{{ c.nom }}</option>
+            {% endfor %}
+        </select>
+
         <label for="filter-note">Note</label>
         <select id="filter-note" name="filter_note">
             <option value="">Toutes</option>
@@ -255,6 +263,11 @@ body.theme-light .comment-author { color: #0055aa; }
     <div class="toolbar">
         <button onclick="toggleForm()" class="btn-add-toggle" id="btn-add-manga" title="Raccourci : N">+ Ajouter un manga</button>
         <a href="{{ url_for('galerie') }}" class="button button-gallery" title="Galerie publique">🌐 Galerie</a>
+        <a href="{{ url_for('collections_page') }}" class="button button-outline" title="Mes collections">🗂 Collections</a>
+        <a href="{{ url_for('rappels_page') }}" class="button button-outline rappels-link" title="Mangas à relancer">
+            🔔 Rappels
+            {% if rappels_count and rappels_count > 0 %}<span class="rappels-badge">{{ rappels_count }}</span>{% endif %}
+        </a>
         <a href="{{ url_for('export_json') }}" class="button button-export" download title="Sauvegarde JSON">📥 JSON</a>
         <a href="{{ url_for('export_csv') }}" class="button button-export" download title="Sauvegarde CSV (Excel)">📥 CSV</a>
         <div class="view-toggle" role="group" aria-label="Vue">
@@ -303,6 +316,11 @@ body.theme-light .comment-author { color: #0055aa; }
                     {% for g in manga.genres %}<span class="genre-badge">{{ g }}</span>{% endfor %}
                 </div>
                 {% endif %}
+                {% if manga.collections %}
+                <div class="genre-badges">
+                    {% for c in manga.collections %}<span class="collection-badge" style="--col: {{ c.couleur }}">🗂 {{ c.nom }}</span>{% endfor %}
+                </div>
+                {% endif %}
                 <p><a href="{{ url_for('editer', id=manga.id) }}">Modifier</a></p>
                 <button class="delete-btn" onclick="supprimerManga('{{ manga.id }}')">Supprimer</button>
                 <button class="comment-toggle-btn" onclick="toggleComments({{ manga.id }}, this)" title="Commentaires">
@@ -324,6 +342,16 @@ body.theme-light .comment-author { color: #0055aa; }
         {% endfor %}
         {% endif %}
     </div>
+
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination">
+        <a href="{{ url_for('index', page=page-1, search=request.args.get('search'), filter_fini=request.args.get('filter_fini'), filter_note=request.args.get('filter_note'), non_lu=request.args.get('non_lu'), filter_genre=request.args.get('filter_genre'), filter_collection=request.args.get('filter_collection'), sort=sort, order=order) }}"
+           class="button button-outline {{ 'disabled' if page <= 1 else '' }}">← Précédent</a>
+        <span class="pagination-info">Page {{ page }} / {{ total_pages }} ({{ total_resultats }} manga{{ 's' if total_resultats != 1 else '' }})</span>
+        <a href="{{ url_for('index', page=page+1, search=request.args.get('search'), filter_fini=request.args.get('filter_fini'), filter_note=request.args.get('filter_note'), non_lu=request.args.get('non_lu'), filter_genre=request.args.get('filter_genre'), filter_collection=request.args.get('filter_collection'), sort=sort, order=order) }}"
+           class="button button-outline {{ 'disabled' if page >= total_pages else '' }}">Suivant →</a>
+    </div>
+    {% endif %}
 
     <!-- Modal suppression -->
     <div id="delete-overlay" class="modal-overlay" aria-hidden="true">
@@ -390,6 +418,18 @@ body.theme-light .comment-author { color: #0055aa; }
                             </label>
                             {% endfor %}
                         </div>
+
+                        {% if collections_disponibles %}
+                        <label><i class="fas fa-folder"></i> Collections</label>
+                        <div class="genre-selector">
+                            {% for c in collections_disponibles %}
+                            <label class="genre-checkbox-label">
+                                <input type="checkbox" name="collections" value="{{ c.id }}">
+                                <span>{{ c.nom }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
 
                     </div>
                     <div class="form-add-col">

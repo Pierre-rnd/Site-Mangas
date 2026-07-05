@@ -58,6 +58,17 @@
                         </label>
                         {% endfor %}
                     </div>
+                    {% if collections_disponibles %}
+                    <label><i class="fas fa-folder"></i> Collections</label>
+                    <div class="genre-selector">
+                        {% for c in collections_disponibles %}
+                        <label class="genre-checkbox-label">
+                            <input type="checkbox" name="collections" value="{{ c.id }}" {% if c.id in manga_collection_ids %}checked{% endif %}>
+                            <span>{{ c.nom }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="form-add-col">
                     <label for="lien"><i class="fas fa-link"></i> Lien de lecture</label>

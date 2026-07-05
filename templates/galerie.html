@@ -204,6 +204,11 @@
 <p class="gallery-subtitle">Découvre les mangas des autres utilisateurs et copie ceux qui t'intéressent dans ta liste.</p>
 
 <a href="{{ url_for('index') }}" class="back-link">← Retour à ma liste</a>
+<a href="{{ url_for('collections_page') }}" class="back-link" style="margin-left:1rem;">🗂 Mes collections</a>
+<a href="{{ url_for('rappels_page') }}" class="back-link rappels-link" style="margin-left:1rem;">
+    🔔 Rappels
+    {% if rappels_count and rappels_count > 0 %}<span class="rappels-badge">{{ rappels_count }}</span>{% endif %}
+</a>
 
 <!-- ── Barre d'actions ── -->
 <div style="display:flex;align-items:center; max-width:900px; flex-wrap:wrap;">
@@ -284,6 +289,15 @@
     {% endif %}
 </div>
 
+{% if total_pages and total_pages > 1 %}
+<div class="pagination">
+    <a href="{{ url_for('galerie', page=page-1, search=request.args.get('search'), filter_note=request.args.get('filter_note'), filter_fini=request.args.get('filter_fini')) }}"
+       class="button button-outline {{ 'disabled' if page <= 1 else '' }}">← Précédent</a>
+    <span class="pagination-info">Page {{ page }} / {{ total_pages }} ({{ total_resultats }} manga{{ 's' if total_resultats != 1 else '' }})</span>
+    <a href="{{ url_for('galerie', page=page+1, search=request.args.get('search'), filter_note=request.args.get('filter_note'), filter_fini=request.args.get('filter_fini')) }}"
+       class="button button-outline {{ 'disabled' if page >= total_pages else '' }}">Suivant →</a>
+</div>
+{% endif %}
 
 <!-- ═══════════════════════════════════════════════════════
      MODAL TOP 3 DES UTILISATEURS

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mes collections</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <h1>🗂 Mes collections</h1>
+    <p class="gallery-subtitle">Regroupe tes mangas comme tu veux : par ambiance, par saison, par envie du moment.</p>
+
+    <a href="{{ url_for('index') }}" class="back-link">← Retour à ma liste</a>
+
+    <div class="collections-page">
+        <div class="collections-header">
+            <form class="new-collection-form" id="new-collection-form">
+                <input type="text" id="nom-collection" name="nom" placeholder="Nom de la nouvelle collection…" maxlength="60" required>
+                <button type="submit" class="button">+ Créer</button>
+            </form>
+        </div>
+
+        {% if not collections %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🗂</div>
+            <h2>Aucune collection pour l'instant</h2>
+            <p>Crée ta première collection ci-dessus, puis rattache des mangas depuis leur fiche d'ajout ou de modification.</p>
+        </div>
+        {% else %}
+        <div class="collections-grid" id="collections-grid">
+            {% for c in collections %}
+            <div class="collection-card" style="--col: {{ c.couleur }}" data-id="{{ c.id }}">
+                <div class="collection-card-header">
+                    <h3>{{ c.nom }}</h3>
+                    <button class="collection-delete-btn" title="Supprimer la collection" onclick="supprimerCollection({{ c.id }}, this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                {% if c.mangas %}
+                <div class="collection-manga-list">
+                    {% for m in c.mangas %}
+                    <a href="{{ url_for('editer', id=m.id) }}" class="collection-manga-item">
+                        <img src="{{ m.image }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+                        <span>{{ m.nom }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="collection-empty">Aucun manga rattaché pour l'instant. Ajoute-le depuis l'écran d'édition d'un manga.</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function showToast(message, type) {
+            type = type || 'success';
+            var container = document.getElementById('toast-container');
+            var toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+            requestAnimationFrame(function() { toast.classList.add('show'); });
+            setTimeout(function() {
+                toast.classList.remove('show');
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 2800);
+        }
+
+        document.getElementById('new-collection-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var input = document.getElementById('nom-collection');
+            var nom = input.value.trim();
+            if (!nom) return;
+            fetch('/collections/creer', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'nom=' + encodeURIComponent(nom)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) {
+                    showToast('Collection créée');
+                    setTimeout(function() { window.location.reload(); }, 800);
+                } else {
+                    showToast(data.erreur || 'Erreur', 'error');
+                }
+            })
+            .catch(function() { showToast('Erreur réseau', 'error'); });
+        });
+
+        function supprimerCollection(id, btn) {
+            if (!confirm('Supprimer cette collection ? Les mangas ne seront pas supprimés.')) return;
+            fetch('/collections/supprimer/' + id, { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.ok) {
+                        var card = btn.closest('.collection-card');
+                        if (card) card.remove();
+                        showToast('Collection supprimée');
+                    }
+                })
+                .catch(function() { showToast('Erreur réseau', 'error'); });
+        }
+    </script>
+</body>
+</html>

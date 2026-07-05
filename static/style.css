@@ -1036,3 +1036,165 @@ body.theme-light .genre-checkbox-label:hover span {
     border-color: #6c63ff;
     color: rgba(0,0,0,0.8);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   AJOUTS — Collections personnalisées, rappels de lecture, pagination
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Badge collection (couleur dynamique via --col) ─────────────────────── */
+.collection-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: color-mix(in srgb, var(--col, #7c5cff) 20%, transparent);
+    color: var(--col, #7c5cff);
+    border: 1px solid color-mix(in srgb, var(--col, #7c5cff) 45%, transparent);
+    white-space: nowrap;
+}
+
+/* ── Badge de notification (rappels) ─────────────────────────────────────── */
+.rappels-link { position: relative; }
+.rappels-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    margin-left: 4px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ff6b81, #e84393);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    box-shadow: 0 0 8px rgba(232, 67, 147, 0.6);
+    vertical-align: middle;
+}
+
+/* ── Pagination ───────────────────────────────────────────────────────────── */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.5rem auto 2rem;
+    flex-wrap: wrap;
+}
+.pagination-info { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+body.theme-light .pagination-info { color: rgba(0,0,0,0.6); }
+.pagination .button.disabled {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+/* ── Page Collections ─────────────────────────────────────────────────────── */
+.collections-page { max-width: 1000px; margin: 0 auto; }
+.collections-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0 1.5rem;
+}
+.new-collection-form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.new-collection-form input[type="text"] { min-width: 220px; }
+
+.collections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+}
+.collection-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glow);
+    border-radius: 16px;
+    padding: 1.1rem 1.2rem;
+    border-top: 4px solid var(--col, var(--accent));
+}
+.collection-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+}
+.collection-card-header h3 { margin: 0; color: var(--col, var(--accent)); font-size: 1.05rem; }
+.collection-delete-btn {
+    background: none !important;
+    border: none !important;
+    color: rgba(255,255,255,0.5) !important;
+    cursor: pointer;
+    font-size: 0.95rem !important;
+    width: auto !important;
+    padding: 0.2rem 0.4rem !important;
+}
+.collection-delete-btn:hover { color: #e74c3c !important; }
+.collection-manga-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.collection-manga-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: 8px;
+    transition: background 0.15s;
+}
+.collection-manga-item:hover { background: rgba(255,255,255,0.06); }
+.collection-manga-item img {
+    width: 30px; height: 42px; object-fit: cover; border-radius: 4px; flex-shrink: 0;
+}
+.collection-empty { color: rgba(255,255,255,0.5); font-size: 0.85rem; font-style: italic; }
+body.theme-light .collection-empty { color: rgba(0,0,0,0.4); }
+
+/* ── Page Rappels de lecture ──────────────────────────────────────────────── */
+.rappels-page { max-width: 900px; margin: 0 auto; }
+.rappels-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-glow);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0 1.5rem;
+}
+.seuil-form { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+.seuil-form input[type="number"] { width: 70px; }
+
+.rappel-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.rappel-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-glow);
+    border-radius: 14px;
+    padding: 0.75rem 1rem;
+}
+.rappel-item img { width: 48px; height: 68px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.rappel-item-info { flex: 1; min-width: 0; }
+.rappel-item-info h3 { margin: 0 0 0.2rem; font-size: 1rem; color: var(--accent); }
+.rappel-item-info p { margin: 0; font-size: 0.85rem; color: rgba(255,255,255,0.65); }
+body.theme-light .rappel-item-info p { color: rgba(0,0,0,0.55); }
+.rappel-urgence {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(232, 67, 147, 0.18);
+    color: #ff6b81;
+    border: 1px solid rgba(232, 67, 147, 0.4);
+    white-space: nowrap;
+}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rappels de lecture</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <h1>🔔 Rappels de lecture</h1>
+    <p class="gallery-subtitle">Les mangas que tu n'as pas ouverts depuis un moment — pour ne rien laisser tomber en cours de route.</p>
+
+    <a href="{{ url_for('index') }}" class="back-link">← Retour à ma liste</a>
+
+    <div class="rappels-page">
+        <div class="rappels-intro">
+            <span>Seuil actuel : un manga apparaît ici si tu ne l'as pas lu depuis <strong>{{ seuil }} jour{{ 's' if seuil != 1 else '' }}</strong> (ou jamais lu).</span>
+            <form class="seuil-form" method="POST" action="{{ url_for('modifier_seuil_rappel') }}">
+                <label for="seuil">Changer le seuil :</label>
+                <input type="number" id="seuil" name="seuil" value="{{ seuil }}" min="1" max="365">
+                <button type="submit" class="button button-outline">Enregistrer</button>
+            </form>
+        </div>
+
+        {% if not mangas %}
+        <div class="empty-state">
+            <div class="empty-state-icon">✅</div>
+            <h2>Tout est à jour !</h2>
+            <p>Aucun manga en cours n'a besoin d'être relancé pour le moment.</p>
+        </div>
+        {% else %}
+        <div class="rappel-list">
+            {% for m in mangas %}
+            <div class="rappel-item">
+                <img src="{{ m.image }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+                <div class="rappel-item-info">
+                    <h3>{{ m.nom }}</h3>
+                    <p>Chapitre {{ m.chapitre }} · {{ m.last_read_label }}</p>
+                </div>
+                {% if m.jours_depuis_lecture is none %}
+                <span class="rappel-urgence">Jamais lu</span>
+                {% else %}
+                <span class="rappel-urgence">{{ m.jours_depuis_lecture }} j sans lecture</span>
+                {% endif %}
+                <a href="{{ url_for('lire_manga', id=m.id) }}" target="_blank" class="button" style="width:auto;">Reprendre</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
