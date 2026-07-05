@@ -32,13 +32,20 @@
         {% else %}
         <div class="collections-grid" id="collections-grid">
             {% for c in collections %}
-            <div class="collection-card" style="--col: {{ c.couleur }}" data-id="{{ c.id }}">
+            <div class="collection-card" style="--col: {{ c.couleur }}" data-id="{{ c.id }}" data-manga-ids="{{ c.manga_ids|tojson|e }}">
                 <div class="collection-card-header">
                     <h3>{{ c.nom }}</h3>
-                    <button class="collection-delete-btn" title="Supprimer la collection" onclick="supprimerCollection({{ c.id }}, this)">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <div class="collection-card-actions">
+                        <button class="collection-add-btn" title="Ajouter des mangas à cette collection"
+                                onclick="openAddMangaModal({{ c.id }}, '{{ c.nom|e }}')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="collection-delete-btn" title="Supprimer la collection" onclick="supprimerCollection({{ c.id }}, this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
+                <div class="collection-body" id="collection-body-{{ c.id }}">
                 {% if c.mangas %}
                 <div class="collection-manga-list">
                     {% for m in c.mangas %}
@@ -49,12 +56,40 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="collection-empty">Aucun manga rattaché pour l'instant. Ajoute-le depuis l'écran d'édition d'un manga.</p>
+                <p class="collection-empty">Aucun manga rattaché pour l'instant.</p>
                 {% endif %}
+                </div>
             </div>
             {% endfor %}
         </div>
         {% endif %}
+    </div>
+
+    <!-- Modal : ajouter des mangas à une collection -->
+    <div id="add-manga-overlay" class="modal-overlay" aria-hidden="true">
+        <div class="modal add-manga-modal">
+            <h2 id="add-manga-modal-title">Ajouter des mangas</h2>
+            {% if not all_mangas %}
+            <p class="collection-empty">Tu n'as encore ajouté aucun manga à ta bibliothèque.</p>
+            {% else %}
+            <div class="manga-picker-list" id="manga-picker-list">
+                {% for m in all_mangas %}
+                <label class="manga-picker-item" data-nom="{{ m.nom|lower }}">
+                    <input type="checkbox" value="{{ m.id }}">
+                    <img src="{{ m.image }}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+                    <span>{{ m.nom }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <input type="text" id="manga-picker-search" placeholder="Filtrer la liste…" class="manga-picker-search">
+            {% endif %}
+            <div class="modal-actions">
+                <button type="button" class="button button-outline" onclick="closeAddMangaModal()">Annuler</button>
+                {% if all_mangas %}
+                <button type="button" class="button" onclick="saveCollectionMangas()">Enregistrer</button>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <script>
@@ -106,6 +141,90 @@
                     }
                 })
                 .catch(function() { showToast('Erreur réseau', 'error'); });
+        }
+
+        /* ── Modal : ajouter des mangas à une collection ─────────────────── */
+        var currentCollectionId = null;
+        var addOverlay = document.getElementById('add-manga-overlay');
+
+        function openAddMangaModal(collectionId, collectionName) {
+            currentCollectionId = collectionId;
+            document.getElementById('add-manga-modal-title').textContent = 'Ajouter des mangas — ' + collectionName;
+
+            var card = document.querySelector('.collection-card[data-id="' + collectionId + '"]');
+            var currentIds = [];
+            try { currentIds = JSON.parse(card.getAttribute('data-manga-ids') || '[]'); } catch (e) {}
+
+            document.querySelectorAll('#manga-picker-list input[type="checkbox"]').forEach(function(cb) {
+                cb.checked = currentIds.indexOf(parseInt(cb.value, 10)) !== -1;
+            });
+
+            var search = document.getElementById('manga-picker-search');
+            if (search) { search.value = ''; filterMangaPicker(); }
+
+            addOverlay.classList.add('show');
+            addOverlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeAddMangaModal() {
+            addOverlay.classList.remove('show');
+            addOverlay.setAttribute('aria-hidden', 'true');
+            currentCollectionId = null;
+        }
+
+        addOverlay.addEventListener('click', function(e) { if (e.target === addOverlay) closeAddMangaModal(); });
+
+        var pickerSearch = document.getElementById('manga-picker-search');
+        if (pickerSearch) pickerSearch.addEventListener('input', filterMangaPicker);
+
+        function filterMangaPicker() {
+            var q = (document.getElementById('manga-picker-search').value || '').toLowerCase();
+            document.querySelectorAll('.manga-picker-item').forEach(function(item) {
+                item.style.display = item.getAttribute('data-nom').indexOf(q) === -1 ? 'none' : '';
+            });
+        }
+
+        function saveCollectionMangas() {
+            if (currentCollectionId === null) return;
+            var ids = Array.prototype.map.call(
+                document.querySelectorAll('#manga-picker-list input[type="checkbox"]:checked'),
+                function(cb) { return parseInt(cb.value, 10); }
+            );
+
+            fetch('/collections/' + currentCollectionId + '/mangas', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ ids: ids })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.ok) { showToast(data.erreur || 'Erreur', 'error'); return; }
+
+                var card = document.querySelector('.collection-card[data-id="' + currentCollectionId + '"]');
+                card.setAttribute('data-manga-ids', JSON.stringify(data.mangas.map(function(m) { return m.id; })));
+
+                var body = document.getElementById('collection-body-' + currentCollectionId);
+                if (data.mangas.length === 0) {
+                    body.innerHTML = '<p class="collection-empty">Aucun manga rattaché pour l\'instant.</p>';
+                } else {
+                    var html = '<div class="collection-manga-list">';
+                    data.mangas.forEach(function(m) {
+                        html += '<a href="/editer/' + m.id + '" class="collection-manga-item">' +
+                                '<img src="' + escH(m.image || '') + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">' +
+                                '<span>' + escH(m.nom) + '</span></a>';
+                    });
+                    html += '</div>';
+                    body.innerHTML = html;
+                }
+
+                showToast('Collection mise à jour');
+                closeAddMangaModal();
+            })
+            .catch(function() { showToast('Erreur réseau', 'error'); });
+        }
+
+        function escH(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
     </script>
 </body>

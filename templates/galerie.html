@@ -241,63 +241,9 @@
     <a href="{{ url_for('galerie') }}" class="button button-outline">Réinitialiser</a>
 </form>
 
-<p class="results-count">{{ mangas|length }} manga{{ 's' if mangas|length != 1 else '' }} dans la galerie</p>
-
-<!-- ── Grille mangas ── -->
-<div class="manga-cards" id="manga-cards">
-    {% if not mangas %}
-    <div class="empty-state">
-        <div class="empty-state-icon">🔍</div>
-        <h2>Aucun manga dans la galerie</h2>
-        <p>Les autres utilisateurs n'ont pas encore partagé de mangas, ou aucun ne correspond à ta recherche.</p>
-        <a href="{{ url_for('index') }}" class="button">Retour à ma liste</a>
-    </div>
-    {% else %}
-    {% for manga in mangas %}
-    <div class="manga-card gallery-card" style="animation-delay: {{ loop.index0 * 0.05 }}s" data-id="{{ manga.id }}">
-        <div class="gallery-owner-badge">👤 {{ manga.owner }}</div>
-        <img src="{{ manga.image }}" alt="{{ manga.nom }}" loading="lazy"
-             onerror="this.onerror=null;this.classList.add('img-fallback');this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
-        <div class="manga-details">
-            <h3>{{ manga.nom }}</h3>
-            <p>Chapitre : <strong>{{ manga.chapitre }}</strong></p>
-            <p>Saison : {{ manga.saison }}</p>
-            <p>Statut : <span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
-            <p>Note : {% for i in range(1, 6) %}{% if i <= manga.note %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</p>
-            {% if manga.already_have %}
-            <button class="copy-card-btn already-have" disabled>✅ Déjà dans ta liste</button>
-            {% else %}
-            <button class="copy-card-btn" onclick="copierCarte({{ manga.id }}, this)">
-                <i class="fas fa-copy"></i> Copier dans ma liste
-            </button>
-            {% endif %}
-            <!-- Bouton commentaires lecture seule -->
-            <button class="comment-toggle-btn" onclick="toggleReadComments({{ manga.id }}, this)">
-                <i class="fas fa-comment"></i>
-                <span id="nb-{{ manga.id }}">Commentaires</span>
-            </button>
-        </div>
-        <!-- Panel commentaires lecture seule -->
-        <div class="comments-readonly-panel" id="ropanel-{{ manga.id }}">
-            <div class="comments-readonly-list" id="rolist-{{ manga.id }}">
-                <p class="comment-empty-ro">Chargement…</p>
-            </div>
-            <p class="comment-ro-info">Les commentaires se gèrent depuis ta propre liste.</p>
-        </div>
-    </div>
-    {% endfor %}
-    {% endif %}
+<div id="results-wrapper">
+{% include '_galerie_cards.html' %}
 </div>
-
-{% if total_pages and total_pages > 1 %}
-<div class="pagination">
-    <a href="{{ url_for('galerie', page=page-1, search=request.args.get('search'), filter_note=request.args.get('filter_note'), filter_fini=request.args.get('filter_fini')) }}"
-       class="button button-outline {{ 'disabled' if page <= 1 else '' }}">← Précédent</a>
-    <span class="pagination-info">Page {{ page }} / {{ total_pages }} ({{ total_resultats }} manga{{ 's' if total_resultats != 1 else '' }})</span>
-    <a href="{{ url_for('galerie', page=page+1, search=request.args.get('search'), filter_note=request.args.get('filter_note'), filter_fini=request.args.get('filter_fini')) }}"
-       class="button button-outline {{ 'disabled' if page >= total_pages else '' }}">Suivant →</a>
-</div>
-{% endif %}
 
 <!-- ═══════════════════════════════════════════════════════
      MODAL TOP 3 DES UTILISATEURS
@@ -589,6 +535,49 @@ function saveTop3() {
     })
     .catch(function() { showToast('Erreur réseau', 'error'); });
 }
+
+/* ── Pagination fluide (AJAX, sans rechargement de la page) ─────────────── */
+(function() {
+    var wrapper = document.getElementById('results-wrapper');
+    if (!wrapper) return;
+
+    function goToPage(pageNum) {
+        var params = new URLSearchParams(window.location.search);
+        params.set('page', pageNum);
+
+        wrapper.classList.add('loading');
+
+        var ajaxParams = new URLSearchParams(params);
+        ajaxParams.set('ajax', '1');
+
+        fetch(window.location.pathname + '?' + ajaxParams.toString())
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                wrapper.innerHTML = html;
+                wrapper.classList.remove('loading');
+                var newUrl = window.location.pathname + '?' + params.toString();
+                history.pushState({ page: pageNum }, '', newUrl);
+                wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            })
+            .catch(function() {
+                wrapper.classList.remove('loading');
+                showToast('Impossible de charger cette page', 'error');
+            });
+    }
+
+    wrapper.addEventListener('click', function(e) {
+        var btn = e.target.closest('.page-nav-btn');
+        if (!btn || btn.disabled) return;
+        e.preventDefault();
+        goToPage(btn.getAttribute('data-page'));
+    });
+
+    window.addEventListener('popstate', function() {
+        var params = new URLSearchParams(window.location.search);
+        var page = params.get('page') || 1;
+        goToPage(page);
+    });
+})();
 </script>
 
 </body>

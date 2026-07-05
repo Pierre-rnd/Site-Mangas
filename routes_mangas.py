@@ -76,13 +76,20 @@ def index():
     total_resultats = len(filtered_mangas)
     page_mangas, total_pages, page = paginate(filtered_mangas, page, PER_PAGE)
 
-    return render_template(
-        'index.html', mangas=page_mangas, sort=sort_by, order=order,
+    template_vars = dict(
+        mangas=page_mangas, sort=sort_by, order=order,
         genres_disponibles=GENRES_DISPONIBLES, filter_genre=filter_genre,
         collections_disponibles=get_user_collections(session['user_id']),
         filter_collection=filter_collection,
         page=page, total_pages=total_pages, total_resultats=total_resultats,
     )
+
+    # Requête AJAX (changement de page) : on ne renvoie que la grille de
+    # cartes + la pagination, pas toute la page (évite le rechargement complet).
+    if request.args.get('ajax') == '1':
+        return render_template('_manga_cards.html', **template_vars)
+
+    return render_template('index.html', **template_vars)
 
 
 # ── Ajouter ────────────────────────────────────────────────────────────────

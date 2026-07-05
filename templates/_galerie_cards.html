@@ -1,0 +1,55 @@
+{# ── Partial réutilisé par galerie.html ET par la réponse AJAX de pagination ── #}
+<p class="results-count">{{ total_resultats }} manga{{ 's' if total_resultats != 1 else '' }} dans la galerie{% if total_pages and total_pages > 1 %} · page {{ page }}/{{ total_pages }}{% endif %}</p>
+
+<div class="manga-cards" id="manga-cards">
+    {% if not mangas %}
+    <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h2>Aucun manga dans la galerie</h2>
+        <p>Les autres utilisateurs n'ont pas encore partagé de mangas, ou aucun ne correspond à ta recherche.</p>
+        <a href="{{ url_for('index') }}" class="button">Retour à ma liste</a>
+    </div>
+    {% else %}
+    {% for manga in mangas %}
+    <div class="manga-card gallery-card" style="animation-delay: {{ loop.index0 * 0.05 }}s" data-id="{{ manga.id }}">
+        <div class="gallery-owner-badge">👤 {{ manga.owner }}</div>
+        <img src="{{ manga.image }}" alt="{{ manga.nom }}" loading="lazy"
+             onerror="this.onerror=null;this.classList.add('img-fallback');this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
+        <div class="manga-details">
+            <h3>{{ manga.nom }}</h3>
+            <p>Chapitre : <strong>{{ manga.chapitre }}</strong></p>
+            <p>Saison : {{ manga.saison }}</p>
+            <p>Statut : <span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
+            <p>Note : {% for i in range(1, 6) %}{% if i <= manga.note %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</p>
+            {% if manga.already_have %}
+            <button class="copy-card-btn already-have" disabled>✅ Déjà dans ta liste</button>
+            {% else %}
+            <button class="copy-card-btn" onclick="copierCarte({{ manga.id }}, this)">
+                <i class="fas fa-copy"></i> Copier dans ma liste
+            </button>
+            {% endif %}
+            <!-- Bouton commentaires lecture seule -->
+            <button class="comment-toggle-btn" onclick="toggleReadComments({{ manga.id }}, this)">
+                <i class="fas fa-comment"></i>
+                <span id="nb-{{ manga.id }}">Commentaires</span>
+            </button>
+        </div>
+        <!-- Panel commentaires lecture seule -->
+        <div class="comments-readonly-panel" id="ropanel-{{ manga.id }}">
+            <div class="comments-readonly-list" id="rolist-{{ manga.id }}">
+                <p class="comment-empty-ro">Chargement…</p>
+            </div>
+            <p class="comment-ro-info">Les commentaires se gèrent depuis ta propre liste.</p>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+
+{% if total_pages and total_pages > 1 %}
+<div class="pagination" id="pagination-controls" data-page="{{ page }}" data-total-pages="{{ total_pages }}">
+    <button type="button" class="button button-outline page-nav-btn" data-page="{{ page - 1 }}" {{ 'disabled' if page <= 1 else '' }}>← Précédent</button>
+    <span class="pagination-info">Page {{ page }} / {{ total_pages }} ({{ total_resultats }} manga{{ 's' if total_resultats != 1 else '' }})</span>
+    <button type="button" class="button button-outline page-nav-btn" data-page="{{ page + 1 }}" {{ 'disabled' if page >= total_pages else '' }}>Suivant →</button>
+</div>
+{% endif %}

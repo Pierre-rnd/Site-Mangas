@@ -30,8 +30,13 @@ def collections_page():
                 (c['id'],)
             )
             c['mangas'] = cur.fetchall()
+            c['manga_ids'] = [m['id'] for m in c['mangas']]
 
-    return render_template('collections.html', collections=collections)
+        # Tous les mangas de l'utilisateur, pour le sélecteur "+ Ajouter des mangas"
+        cur.execute("SELECT id, nom, image FROM mangas WHERE user_id = %s ORDER BY nom", (user_id,))
+        all_mangas = cur.fetchall()
+
+    return render_template('collections.html', collections=collections, all_mangas=all_mangas)
 
 
 @app.route('/collections/creer', methods=['POST'])
@@ -65,3 +70,41 @@ def supprimer_collection(id):
     with db_cursor(commit=True) as cur:
         cur.execute("DELETE FROM collections WHERE id=%s AND user_id=%s", (id, session['user_id']))
     return jsonify({"ok": True})
+
+
+@app.route('/collections/<int:id>/mangas', methods=['POST'])
+def set_collection_mangas(id):
+    """Remplace la liste des mangas rattachés à une collection (utilisé par le
+    bouton '+' sur chaque carte de collection)."""
+    if 'user_id' not in session:
+        return jsonify({"erreur": "Non autorisé"}), 403
+
+    data = request.get_json(force=True, silent=True) or {}
+    try:
+        manga_ids = [int(x) for x in data.get('ids', [])]
+    except (TypeError, ValueError):
+        return jsonify({"erreur": "Requête invalide"}), 400
+
+    with db_cursor(dict_cursor=True, commit=True) as cur:
+        cur.execute("SELECT id FROM collections WHERE id=%s AND user_id=%s", (id, session['user_id']))
+        if not cur.fetchone():
+            return jsonify({"erreur": "Collection introuvable"}), 404
+
+        cur.execute("DELETE FROM manga_collections WHERE collection_id = %s", (id,))
+        for mid in manga_ids:
+            cur.execute(
+                "INSERT INTO manga_collections (manga_id, collection_id)"
+                " SELECT %s, %s FROM mangas WHERE id = %s AND user_id = %s"
+                " ON CONFLICT DO NOTHING",
+                (mid, id, mid, session['user_id'])
+            )
+
+        cur.execute(
+            "SELECT m.id, m.nom, m.image FROM manga_collections mc"
+            " JOIN mangas m ON m.id = mc.manga_id"
+            " WHERE mc.collection_id = %s ORDER BY m.nom",
+            (id,)
+        )
+        mangas = cur.fetchall()
+
+    return jsonify({"ok": True, "mangas": mangas})

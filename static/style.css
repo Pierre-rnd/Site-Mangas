@@ -1056,6 +1056,16 @@ body.theme-light .genre-checkbox-label:hover span {
 }
 
 /* ── Badge de notification (rappels) ─────────────────────────────────────── */
+.rappels-link,
+.toolbar .button-outline {
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.35rem;
+    width: auto !important;
+    min-width: auto !important;
+    margin-top: 0 !important;
+}
 .rappels-link { position: relative; }
 .rappels-badge {
     display: inline-flex;
@@ -1075,6 +1085,13 @@ body.theme-light .genre-checkbox-label:hover span {
 }
 
 /* ── Pagination ───────────────────────────────────────────────────────────── */
+#results-wrapper {
+    transition: opacity 0.15s ease;
+}
+#results-wrapper.loading {
+    opacity: 0.4;
+    pointer-events: none;
+}
 .pagination {
     display: flex;
     align-items: center;
@@ -1198,3 +1215,62 @@ body.theme-light .rappel-item-info p { color: rgba(0,0,0,0.55); }
     border: 1px solid rgba(232, 67, 147, 0.4);
     white-space: nowrap;
 }
+
+/* ── Bouton "+" ajouter des mangas à une collection ──────────────────────── */
+.collection-card-actions { display: flex; gap: 0.35rem; }
+.collection-add-btn {
+    background: none !important;
+    border: 1px solid var(--col, var(--accent)) !important;
+    color: var(--col, var(--accent)) !important;
+    cursor: pointer;
+    font-size: 0.8rem !important;
+    width: 26px !important;
+    height: 26px;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.collection-add-btn:hover {
+    background: var(--col, var(--accent)) !important;
+    color: #0a0e1a !important;
+    box-shadow: none !important;
+}
+
+/* ── Modal sélecteur de mangas ────────────────────────────────────────────── */
+.add-manga-modal { max-width: 440px; width: 90%; text-align: left; }
+.add-manga-modal h2 { margin: 0 0 1rem; font-size: 1.15rem; color: var(--accent); }
+.manga-picker-search {
+    width: 100% !important;
+    margin: 0.75rem 0 0 !important;
+}
+.manga-picker-list {
+    max-height: 320px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding-right: 0.3rem;
+}
+.manga-picker-item {
+    display: flex !important;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100% !important;
+    margin: 0 !important;
+    font-weight: 400 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    background: transparent !important;
+    transition: background 0.15s;
+}
+.manga-picker-item:hover { background: rgba(255,255,255,0.06) !important; box-shadow: none !important; }
+.manga-picker-item input[type="checkbox"] { width: auto !important; margin: 0 !important; flex-shrink: 0; accent-color: var(--accent); }
+.manga-picker-item img { width: 30px; height: 42px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+.manga-picker-item span { font-size: 0.9rem; }

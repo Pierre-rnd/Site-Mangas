@@ -47,6 +47,10 @@ def galerie():
         total_resultats = len(all_mangas)
         all_mangas, total_pages, page = paginate(all_mangas, page, PER_PAGE)
 
+        if request.args.get('ajax') == '1':
+            return render_template('_galerie_cards.html', mangas=all_mangas,
+                                    page=page, total_pages=total_pages, total_resultats=total_resultats)
+
         # Top 3 de tous les utilisateurs
         cur.execute(
             "SELECT t.rank, t.user_id, u.username,"

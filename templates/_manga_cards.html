@@ -1,0 +1,73 @@
+{# ── Partial réutilisé par index.html ET par la réponse AJAX de pagination ── #}
+<p class="results-count">{{ total_resultats }} manga{{ 's' if total_resultats != 1 else '' }} au total{% if total_pages and total_pages > 1 %} · page {{ page }}/{{ total_pages }}{% endif %}</p>
+
+<div class="manga-cards" id="manga-cards">
+    {% if not mangas %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📚</div>
+        <h2>Aucun manga trouvé</h2>
+        <p>Modifiez les filtres ou ajoutez un nouveau manga pour commencer.</p>
+        <button onclick="toggleForm()" class="button">Ajouter un manga</button>
+    </div>
+    {% else %}
+    {% for manga in mangas %}
+    <div class="manga-card" style="animation-delay: {{ loop.index0 * 0.06 }}s">
+        {% if manga.non_lu %}
+        <div class="badge-non-lu">Non lu depuis 1 semaine</div>
+        {% endif %}
+        <img src="{{ manga.image }}" alt="{{ manga.nom }}" loading="lazy" onerror="this.onerror=null; this.classList.add('img-fallback'); this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';">
+        <div class="manga-details">
+            <h3>{{ manga.nom }}</h3>
+            <p class="chapter-row">Chapitre :</p>
+            <div class="chapter-controls">
+                <button type="button" class="chapter-btn" onclick="modifierChapitre('{{ manga.id }}', -1)" aria-label="Diminuer le chapitre">−</button>
+                <span id="chapitre-{{ manga.id }}">{{ manga.chapitre }}</span>
+                <button type="button" class="chapter-btn" onclick="modifierChapitre('{{ manga.id }}', 1)" aria-label="Augmenter le chapitre">+</button>
+            </div>
+            <p>Saison : {{ manga.saison }}</p>
+            <p class="last-read" title="Dernière lecture">📅 {{ manga.last_read_label }}</p>
+            <p>Statut : <span class="{{ 'status-termine' if manga.fini else 'status-cours' }}">{{ 'Terminé' if manga.fini else 'En cours' }}</span></p>
+            <p>
+                <a href="{{ url_for('lire_manga', id=manga.id) }}" target="_blank" class="link-read">Lire le manga</a>
+                <button type="button" class="copy-link-btn" data-url="{{ url_for('lire_manga', id=manga.id, _external=True) }}" onclick="copyReadLink(this)" title="Copier le lien">📋</button>
+            </p>
+            <p>Note: {% for i in range(1, 6) %}{% if i <= manga.note %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</p>
+            {% if manga.genres %}
+            <div class="genre-badges">
+                {% for g in manga.genres %}<span class="genre-badge">{{ g }}</span>{% endfor %}
+            </div>
+            {% endif %}
+            {% if manga.collections %}
+            <div class="genre-badges">
+                {% for c in manga.collections %}<span class="collection-badge" style="--col: {{ c.couleur }}">🗂 {{ c.nom }}</span>{% endfor %}
+            </div>
+            {% endif %}
+            <p><a href="{{ url_for('editer', id=manga.id) }}">Modifier</a></p>
+            <button class="delete-btn" onclick="supprimerManga('{{ manga.id }}')">Supprimer</button>
+            <button class="comment-toggle-btn" onclick="toggleComments({{ manga.id }}, this)" title="Commentaires">
+                <i class="fas fa-comment"></i> Notes perso <span id="nb-{{ manga.id }}"></span>
+            </button>
+        </div>
+        <div class="comments-panel" id="panel-{{ manga.id }}">
+            <div class="comments-list" id="list-{{ manga.id }}"></div>
+            <div class="comment-form">
+                <textarea class="comment-textarea" id="input-{{ manga.id }}"
+                          placeholder="Ajoute une note…" maxlength="1000"
+                          onkeydown="handleCommentKey(event, {{ manga.id }})"></textarea>
+                <button class="button comment-send" onclick="sendComment({{ manga.id }})">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+
+{% if total_pages and total_pages > 1 %}
+<div class="pagination" id="pagination-controls" data-page="{{ page }}" data-total-pages="{{ total_pages }}">
+    <button type="button" class="button button-outline page-nav-btn" data-page="{{ page - 1 }}" {{ 'disabled' if page <= 1 else '' }}>← Précédent</button>
+    <span class="pagination-info">Page {{ page }} / {{ total_pages }} ({{ total_resultats }} manga{{ 's' if total_resultats != 1 else '' }})</span>
+    <button type="button" class="button button-outline page-nav-btn" data-page="{{ page + 1 }}" {{ 'disabled' if page >= total_pages else '' }}>Suivant →</button>
+</div>
+{% endif %}

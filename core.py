@@ -32,7 +32,7 @@ cloudinary.config(
 )
 
 # Nombre de mangas affichés par page (index et galerie)
-PER_PAGE = 12
+PER_PAGE = 20
 
 # Seuil par défaut (en jours) avant qu'un manga soit considéré "à relancer"
 DEFAULT_RAPPEL_JOURS = 7
