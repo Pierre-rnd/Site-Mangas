@@ -1,6 +1,8 @@
 {# ── Partial réutilisé par index.html ET par la réponse AJAX de pagination ── #}
 <p class="results-count">{{ total_resultats }} manga{{ 's' if total_resultats != 1 else '' }} au total{% if total_pages and total_pages > 1 %} · page {{ page }}/{{ total_pages }}{% endif %}</p>
 
+{% include '_pagination.html' %}
+
 <div class="manga-cards" id="manga-cards">
     {% if not mangas %}
     <div class="empty-state">
@@ -64,10 +66,4 @@
     {% endif %}
 </div>
 
-{% if total_pages and total_pages > 1 %}
-<div class="pagination" id="pagination-controls" data-page="{{ page }}" data-total-pages="{{ total_pages }}">
-    <button type="button" class="button button-outline page-nav-btn" data-page="{{ page - 1 }}" {{ 'disabled' if page <= 1 else '' }}>← Précédent</button>
-    <span class="pagination-info">Page {{ page }} / {{ total_pages }} ({{ total_resultats }} manga{{ 's' if total_resultats != 1 else '' }})</span>
-    <button type="button" class="button button-outline page-nav-btn" data-page="{{ page + 1 }}" {{ 'disabled' if page >= total_pages else '' }}>Suivant →</button>
-</div>
-{% endif %}
+{% include '_pagination.html' %}

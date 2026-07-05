@@ -1102,8 +1102,19 @@ body.theme-light .genre-checkbox-label:hover span {
 }
 .pagination-info { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
 body.theme-light .pagination-info { color: rgba(0,0,0,0.6); }
+.pagination .button {
+    width: auto !important;
+    min-width: auto !important;
+    margin-top: 0 !important;
+    flex: 0 0 auto;
+}
 .pagination .button.disabled {
     opacity: 0.35;
+    pointer-events: none;
+}
+.pagination .button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
     pointer-events: none;
 }
 

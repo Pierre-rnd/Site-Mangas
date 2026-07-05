@@ -1,0 +1,7 @@
+{% if total_pages and total_pages > 1 %}
+<div class="pagination">
+    <button type="button" class="button button-outline page-nav-btn" data-page="{{ page - 1 }}" {{ 'disabled' if page <= 1 else '' }}>← Précédent</button>
+    <span class="pagination-info">Page {{ page }} / {{ total_pages }} ({{ total_resultats }} manga{{ 's' if total_resultats != 1 else '' }})</span>
+    <button type="button" class="button button-outline page-nav-btn" data-page="{{ page + 1 }}" {{ 'disabled' if page >= total_pages else '' }}>Suivant →</button>
+</div>
+{% endif %}
