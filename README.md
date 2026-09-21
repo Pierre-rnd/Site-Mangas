@@ -18,9 +18,8 @@ Il a été développé dans le cadre de mes projets personnels et pour améliore
 - Filtrer et rechercher des mangas dans la collection (nom, genre, note, statut, collection)
 - **Collections personnalisées** : crée tes propres dossiers (ex: "Coup de cœur 2026") et rattache-y des mangas, en plus des genres fixes
 - **Rappels de lecture** : une page dédiée liste les mangas non lus depuis un certain nombre de jours (seuil personnalisable), avec un badge de notification dans le menu
-- Pagination (12 mangas par page) sur la liste principale et la galerie communautaire
+- Pagination (20 mangas par page) sur la liste principale et la galerie communautaire
 - Galerie communautaire : voir les mangas des autres utilisateurs, les copier, commentaires, top 3
-- Stockage via PostgreSQL, images hébergées sur Cloudinary
 - Interface responsive et moderne (thème clair / sombre)
 - Export JSON / CSV
 
@@ -31,7 +30,6 @@ Il a été développé dans le cadre de mes projets personnels et pour améliore
 - **Langage :** Python
 - **Framework :** Flask
 - **Front-end :** HTML, CSS, JavaScript
-- **Stockage :** PostgreSQL (+ Cloudinary pour les images)
 
 ---
 
@@ -50,8 +48,6 @@ Le backend est découpé en modules pour rester lisible et facile à faire évol
 | `routes_collections.py`  | Collections personnalisées |
 | `routes_rappels.py`      | Rappels de lecture |
 | `app.py`                 | Point d'entrée : assemble tous les modules et lance le serveur |
-
-Toutes les routes gardent les mêmes noms et URLs qu'avant (`/`, `/login`, `/galerie`, ...), donc aucune modification n'est nécessaire côté déploiement (Render, variables d'environnement, etc.).
 
 ### Variables d'environnement nécessaires
 `SECRET_KEY`, `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
